@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Bar } from 'recharts';
-import { Droplet, Leaf, LayoutDashboard, Info, Trash2, Edit3, RotateCw, Download, Upload, Settings, Cloud, CloudRain } from 'lucide-react';
+import { Droplet, Leaf, LayoutDashboard, Info, Trash2, Edit3, RotateCw, Download, Upload, Settings, CloudRain } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 import {
@@ -1285,7 +1285,7 @@ const DefaultComponent = (): React.ReactNode => {
     </div>
   );
 
-  // Fix the weather-based recommendations logic
+  // Fix the weather-based recommendations logic with better accuracy
   const getPlanningRecommendations = useMemo(() => {
     // Check if there's weather data available
     if (!weatherData || weatherData.length === 0) {
@@ -1299,8 +1299,19 @@ const DefaultComponent = (): React.ReactNode => {
     
     const nextWeekWeather = weatherData.slice(0, 7);
     
-    // Check if there's a hot, dry period coming up (more robust logic)
-    const shouldRecommendIrrigation = nextWeekWeather.some(day => 
+    // Check for precipitation in the forecast
+    const rainyDays = nextWeekWeather.filter(day => 
+      day.weather.toLowerCase().includes('rain') || 
+      day.weather.toLowerCase().includes('shower') || 
+      day.weather.toLowerCase().includes('drizzle') ||
+      day.weather.toLowerCase().includes('thunderstorm')
+    );
+    
+    // If there's rain in the forecast, don't recommend irrigation
+    const hasRainInForecast = rainyDays.length > 0;
+    
+    // Check if there's a hot, dry period coming up - only if no rain is forecasted
+    const shouldRecommendIrrigation = !hasRainInForecast && nextWeekWeather.some(day => 
       day.temp > 85 && 
       !day.weather.toLowerCase().includes('rain') && 
       !day.weather.toLowerCase().includes('shower') && 
@@ -1321,12 +1332,8 @@ const DefaultComponent = (): React.ReactNode => {
       day.weather.toLowerCase().includes('thunderstorm')
     );
 
-    // Check for rain forecasts for rainwater harvesting
-    const shouldPrepareRainwater = nextWeekWeather.slice(0, 4).some(day =>
-      day.weather.toLowerCase().includes('rain') || 
-      day.weather.toLowerCase().includes('shower') || 
-      day.weather.toLowerCase().includes('drizzle')
-    );
+    // Check for rain forecasts for rainwater harvesting - only recommend if there's actual rain coming
+    const shouldPrepareRainwater = hasRainInForecast;
     
     return {
       shouldRecommendIrrigation,
@@ -1645,6 +1652,22 @@ const DefaultComponent = (): React.ReactNode => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
+                      {/* Show weather summary first */}
+                      {weatherData.length > 0 && (
+                        <div className="flex items-center p-2 bg-gray-50 rounded-md mb-2">
+                          <div className="flex-grow">
+                            <p className="font-medium">Weather Summary</p>
+                            <p className="text-xs text-gray-600">
+                              {getPlanningRecommendations.shouldPrepareRainwater 
+                                ? "Rain is expected in the coming days." 
+                                : "Mostly dry conditions expected."}
+                              {" "}Average high: {weatherData.slice(0, 5).reduce((sum, day) => sum + day.temp, 0) / 5}°F
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Only show fertilizer alert if it's actually going to rain */}
                       {weatherData.length > 0 && getPlanningRecommendations.shouldDelayFertilizer && (
                         <div className="flex items-center p-2 bg-green-50 rounded-md">
                           <Leaf className="h-5 w-5 text-green-500 mr-3" />
@@ -1667,6 +1690,7 @@ const DefaultComponent = (): React.ReactNode => {
                         </div>
                       )}
                       
+                      {/* Only show irrigation if there's NO rain expected */}
                       {weatherData.length > 0 && getPlanningRecommendations.shouldRecommendIrrigation && (
                         <div className="flex items-center p-2 bg-blue-50 rounded-md">
                           <Droplet className="h-5 w-5 text-blue-500 mr-3" />
@@ -1692,7 +1716,7 @@ const DefaultComponent = (): React.ReactNode => {
                       {irrigationPlans.some(plan => plan.status === 'planned') && (
                         <div className="flex items-center p-2 bg-green-50 rounded-md">
                           <Droplet className="h-5 w-5 text-green-500 mr-3" />
-                          <div>
+                          <div className="flex-grow">
                             <p className="font-medium">Irrigation Scheduled</p>
                             <p className="text-xs text-gray-600">
                               {irrigationPlans.filter(p => p.status === 'planned').length} upcoming irrigation {irrigationPlans.filter(p => p.status === 'planned').length === 1 ? 'plan' : 'plans'}
@@ -1714,7 +1738,7 @@ const DefaultComponent = (): React.ReactNode => {
                       {rotationPlans.some(plan => plan.status === 'planned') && (
                         <div className="flex items-center p-2 bg-orange-50 rounded-md">
                           <RotateCw className="h-5 w-5 text-orange-500 mr-3" />
-                          <div>
+                          <div className="flex-grow">
                             <p className="font-medium">Crop Rotation Plans</p>
                             <p className="text-xs text-gray-600">
                               {rotationPlans.filter(p => p.status === 'planned').length} crop rotation {rotationPlans.filter(p => p.status === 'planned').length === 1 ? 'plan' : 'plans'} awaiting action
@@ -1733,10 +1757,11 @@ const DefaultComponent = (): React.ReactNode => {
                         </div>
                       )}
                       
+                      {/* Only show rainwater harvesting if rain is actually expected */}
                       {getPlanningRecommendations.shouldPrepareRainwater && (
                         <div className="flex items-center p-2 bg-cyan-50 rounded-md">
                           <CloudRain className="h-5 w-5 text-cyan-500 mr-3" />
-                          <div>
+                          <div className="flex-grow">
                             <p className="font-medium">Rainwater Harvesting Opportunity</p>
                             <p className="text-xs text-gray-600">
                               Rain is forecasted soon. Consider preparing rainwater harvesting systems.
@@ -1751,33 +1776,6 @@ const DefaultComponent = (): React.ReactNode => {
                             }}
                           >
                             Create Plan
-                          </Button>
-                        </div>
-                      )}
-                      
-                      {weatherTaskPlans.some(plan => 
-                        plan.status === 'planned' && 
-                        weatherData.some(day => 
-                          day.weather.toLowerCase().includes((plan.weatherCondition || '').toLowerCase())
-                        )
-                      ) && (
-                        <div className="flex items-center p-2 bg-yellow-50 rounded-md">
-                          <Cloud className="h-5 w-5 text-yellow-500 mr-3" />
-                          <div>
-                            <p className="font-medium">Weather Alert Tasks</p>
-                            <p className="text-xs text-gray-600">
-                              Weather conditions match your planned tasks
-                            </p>
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="ml-auto text-yellow-600" 
-                            onClick={() => {
-                              setActiveTab('planners');
-                            }}
-                          >
-                            Review
                           </Button>
                         </div>
                       )}
