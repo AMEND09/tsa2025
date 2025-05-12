@@ -108,6 +108,9 @@ export interface ExportData {
   tasks: Task[];
   issues: Issue[];
   cropPlanEvents: CropPlanEvent[];
+  plantingPlans?: PlanItem[];
+  fertilizerPlans?: PlanItem[];
+  pestManagementPlans?: PlanItem[];
 }
 
 export type AnyHistoryEntry = {
@@ -129,3 +132,15 @@ export type AnyHistoryEntry = {
   crop?: string;
   endDate?: Date;
 };
+
+export interface PlanItem {
+  id: number;
+  farmId: string;
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  status: 'planned' | 'in-progress' | 'completed' | 'cancelled';
+  notes: string;
+  [key: string]: any; // To allow for additional fields in specialized plan types
+}
