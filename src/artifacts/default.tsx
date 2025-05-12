@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Bar } from 'recharts';
-import { Droplet, Leaf, LayoutDashboard, Info, Trash2, Edit3, RotateCw, Download, Upload, Settings } from 'lucide-react';
+import { Droplet, Leaf, LayoutDashboard, Info, Trash2, Edit3, RotateCw, Download, Upload, Settings, Cloud, CloudRain, Bug } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 import {
@@ -18,7 +18,8 @@ import {
   ConfirmDelete,
   CropPlanEvent,
   SustainabilityMetrics as ISustainabilityMetrics,
-  ExportData
+  ExportData,
+  PlanItem
 } from './types';
 
 import {
@@ -36,8 +37,16 @@ import TaskManager from './components/TaskManager';
 import IssueTracker from './components/IssueTracker';
 import HistoryPage from './components/HistoryPage';
 import Instructions from './components/Instructions';
+import PlannerDashboard from './components/PlannerDashboard';
+import PlantingPlanForm from './components/PlantingPlanForm';
+import FertilizerPlanForm from './components/FertilizerPlanForm';
+import PestManagementPlanForm from './components/PestManagementPlanForm';
+import IrrigationPlanForm from './components/IrrigationPlanForm';
+import WeatherTaskPlanForm from './components/WeatherTaskPlanForm';
+import RotationPlanForm from './components/RotationPlanForm';
+import RainwaterPlanForm from './components/RainwaterPlanForm';
 
-const DefaultComponent: React.FC = () => {
+const DefaultComponent = (): React.ReactNode => {
   // Define walkthrough steps for the Walkthrough component
   const WALKTHROUGH_STEPS = [
     {
@@ -102,6 +111,13 @@ const DefaultComponent: React.FC = () => {
       content: 'Plan and schedule your farming activities throughout the year.',
       placement: 'bottom' as const,
       tabId: 'cropplan'
+    },
+    {
+      target: '[data-walkthrough="planners-tab"]',
+      title: 'Farm Planners',
+      content: 'Plan your planting, fertilizing, and pest management activities here.',
+      placement: 'bottom' as const,
+      tabId: 'planners'
     }
   ];
 
@@ -163,6 +179,211 @@ const DefaultComponent: React.FC = () => {
     message: string;
   } | null>(null);
 
+  const [plantingPlans, setPlantingPlans] = useState<PlanItem[]>(() => {
+    const saved = localStorage.getItem('plantingPlans');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [fertilizerPlans, setFertilizerPlans] = useState<PlanItem[]>(() => {
+    const saved = localStorage.getItem('fertilizerPlans');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [pestManagementPlans, setPestManagementPlans] = useState<PlanItem[]>(() => {
+    const saved = localStorage.getItem('pestManagementPlans');
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [irrigationPlans, setIrrigationPlans] = useState<PlanItem[]>(() => {
+    const saved = localStorage.getItem('irrigationPlans');
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [weatherTaskPlans, setWeatherTaskPlans] = useState<PlanItem[]>(() => {
+    const saved = localStorage.getItem('weatherTaskPlans');
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [rotationPlans, setRotationPlans] = useState<PlanItem[]>(() => {
+    const saved = localStorage.getItem('rotationPlans');
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [rainwaterPlans, setRainwaterPlans] = useState<PlanItem[]>(() => {
+    const saved = localStorage.getItem('rainwaterPlans');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [isAddingPlantingPlan, setIsAddingPlantingPlan] = useState(false);
+  const [isAddingFertilizerPlan, setIsAddingFertilizerPlan] = useState(false);
+  const [isAddingPestPlan, setIsAddingPestPlan] = useState(false);
+  const [isAddingIrrigationPlan, setIsAddingIrrigationPlan] = useState(false);
+  const [isAddingWeatherTaskPlan, setIsAddingWeatherTaskPlan] = useState(false);
+  const [isAddingRotationPlan, setIsAddingRotationPlan] = useState(false);
+  const [isAddingRainwaterPlan, setIsAddingRainwaterPlan] = useState(false);
+  
+  const [newPlantingPlan, setNewPlantingPlan] = useState<Omit<PlanItem, 'id' | 'status'> & {
+    farmId: string;
+    title: string;
+    description: string;
+    startDate: string;
+    endDate: string;
+    notes: string;
+  }>({
+    farmId: '',
+    title: '',
+    description: '',
+    startDate: '',
+    endDate: '',
+    notes: ''
+  });
+
+  const [newFertilizerPlan, setNewFertilizerPlan] = useState<Omit<PlanItem, 'id' | 'status'> & {
+    farmId: string;
+    title: string;
+    description: string;
+    fertilizerType: string;
+    applicationRate: string;
+    startDate: string;
+    endDate: string;
+    notes: string;
+  }>({
+    farmId: '',
+    title: '',
+    description: '',
+    fertilizerType: '',
+    applicationRate: '',
+    startDate: '',
+    endDate: '',
+    notes: ''
+  });
+
+  const [newPestPlan, setNewPestPlan] = useState<Omit<PlanItem, 'id' | 'status'> & { 
+    farmId: string; 
+    title: string; 
+    description: string; 
+    pestType: string; 
+    controlMethod: string; 
+    startDate: string; 
+    endDate: string; 
+    notes: string; 
+  }>({
+    farmId: '',
+    title: '',
+    description: '',
+    pestType: '',
+    controlMethod: '',
+    startDate: '',
+    endDate: '',
+    notes: ''
+  });
+  
+  // New state for irrigation plan
+  const [newIrrigationPlan, setNewIrrigationPlan] = useState<Omit<PlanItem, 'id' | 'status'> & {
+    farmId: string;
+    title: string;
+    description: string;
+    irrigationMethod: string;
+    waterSource: string;
+    frequency: string;
+    soilMoistureThreshold: string;
+    weatherConditions: string;
+    startDate: string;
+    endDate: string;
+    notes: string;
+  }>({
+    farmId: '',
+    title: '',
+    description: '',
+    irrigationMethod: '',
+    waterSource: '',
+    frequency: '',
+    soilMoistureThreshold: '',
+    weatherConditions: '',
+    startDate: '',
+    endDate: '',
+    notes: ''
+  });
+  
+  // New state for weather task plan
+  const [newWeatherTaskPlan, setNewWeatherTaskPlan] = useState<Omit<PlanItem, 'id' | 'status'> & {
+    farmId: string;
+    title: string;
+    description: string;
+    taskType: string;
+    weatherCondition: string;
+    taskActions: string;
+    priority: string;
+    startDate: string;
+    endDate: string;
+    notes: string;
+  }>({
+    farmId: '',
+    title: '',
+    description: '',
+    taskType: '',
+    weatherCondition: '',
+    taskActions: '',
+    priority: 'medium',
+    startDate: '',
+    endDate: '',
+    notes: ''
+  });
+  
+  // New state for crop rotation plan
+  const [newRotationPlan, setNewRotationPlan] = useState<Omit<PlanItem, 'id' | 'status'> & {
+    farmId: string;
+    title: string;
+    description: string;
+    rotationCrops: string[];
+    rotationInterval: string;
+    soilPreparation: string;
+    expectedBenefits: string;
+    startDate: string;
+    endDate: string;
+    notes: string;
+  }>({
+    farmId: '',
+    title: '',
+    description: '',
+    rotationCrops: [],
+    rotationInterval: '',
+    soilPreparation: '',
+    expectedBenefits: '',
+    startDate: '',
+    endDate: '',
+    notes: ''
+  });
+  
+  // New state for rainwater harvesting plan
+  const [newRainwaterPlan, setNewRainwaterPlan] = useState<Omit<PlanItem, 'id' | 'status'> & {
+    farmId: string;
+    title: string;
+    description: string;
+    harvestingMethod: string;
+    storageType: string;
+    harvestingCapacity: string;
+    collectionArea: string;
+    filteringMethod: string;
+    usageIntent: string;
+    startDate: string;
+    endDate: string;
+    notes: string;
+  }>({
+    farmId: '',
+    title: '',
+    description: '',
+    harvestingMethod: '',
+    storageType: '',
+    harvestingCapacity: '',
+    collectionArea: '',
+    filteringMethod: '',
+    usageIntent: '',
+    startDate: '',
+    endDate: '',
+    notes: ''
+  });
+
   const getFilteredFarms = () => {
     if (cropFilter === "all") return farms;
     return farms.filter(farm => farm.crop === cropFilter);
@@ -186,6 +407,34 @@ const DefaultComponent: React.FC = () => {
     document.head.appendChild(style);
     return () => style.remove();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('plantingPlans', JSON.stringify(plantingPlans));
+  }, [plantingPlans]);
+
+  useEffect(() => {
+    localStorage.setItem('fertilizerPlans', JSON.stringify(fertilizerPlans));
+  }, [fertilizerPlans]);
+
+  useEffect(() => {
+    localStorage.setItem('pestManagementPlans', JSON.stringify(pestManagementPlans));
+  }, [pestManagementPlans]);
+  
+  useEffect(() => {
+    localStorage.setItem('irrigationPlans', JSON.stringify(irrigationPlans));
+  }, [irrigationPlans]);
+  
+  useEffect(() => {
+    localStorage.setItem('weatherTaskPlans', JSON.stringify(weatherTaskPlans));
+  }, [weatherTaskPlans]);
+  
+  useEffect(() => {
+    localStorage.setItem('rotationPlans', JSON.stringify(rotationPlans));
+  }, [rotationPlans]);
+  
+  useEffect(() => {
+    localStorage.setItem('rainwaterPlans', JSON.stringify(rainwaterPlans));
+  }, [rainwaterPlans]);
 
   const fetchUserLocation = async () => {
     try {
@@ -413,6 +662,203 @@ const DefaultComponent: React.FC = () => {
     setNewRotation({ farmId: '', crop: '', startDate: '', endDate: '' });
   };
 
+  const handleAddPlantingPlan = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPlantingPlans([...plantingPlans, {
+      id: Date.now(),
+      status: 'planned',
+      ...newPlantingPlan
+    }]);
+    setIsAddingPlantingPlan(false);
+    setNewPlantingPlan({
+      farmId: '',
+      title: '',
+      description: '',
+      startDate: '',
+      endDate: '',
+      notes: ''
+    });
+  };
+
+  const handleAddFertilizerPlan = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFertilizerPlans([...fertilizerPlans, {
+      id: Date.now(),
+      status: 'planned',
+      ...newFertilizerPlan
+    }]);
+    setIsAddingFertilizerPlan(false);
+    setNewFertilizerPlan({
+      farmId: '',
+      title: '',
+      description: '',
+      fertilizerType: '',
+      applicationRate: '',
+      startDate: '',
+      endDate: '',
+      notes: ''
+    });
+  };
+
+  const handleAddPestPlan = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPestManagementPlans([...pestManagementPlans, {
+      ...newPestPlan,
+      id: Date.now(),
+      status: 'planned'
+    }]);
+    setIsAddingPestPlan(false);
+    setNewPestPlan({
+      farmId: '',
+      title: '',
+      description: '',
+      pestType: '',
+      controlMethod: '',
+      startDate: '',
+      endDate: '',
+      notes: ''
+    });
+  };
+  
+  // New handler for irrigation plan
+  const handleAddIrrigationPlan = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIrrigationPlans([...irrigationPlans, {
+      ...newIrrigationPlan,
+      id: Date.now(),
+      status: 'planned'
+    }]);
+    setIsAddingIrrigationPlan(false);
+    setNewIrrigationPlan({
+      farmId: '',
+      title: '',
+      description: '',
+      irrigationMethod: '',
+      waterSource: '',
+      frequency: '',
+      soilMoistureThreshold: '',
+      weatherConditions: '',
+      startDate: '',
+      endDate: '',
+      notes: ''
+    });
+  };
+  
+  // New handler for weather task plan
+  const handleAddWeatherTaskPlan = (e: React.FormEvent) => {
+    e.preventDefault();
+    setWeatherTaskPlans([...weatherTaskPlans, {
+      ...newWeatherTaskPlan,
+      id: Date.now(),
+      status: 'planned'
+    }]);
+    setIsAddingWeatherTaskPlan(false);
+    setNewWeatherTaskPlan({
+      farmId: '',
+      title: '',
+      description: '',
+      taskType: '',
+      weatherCondition: '',
+      taskActions: '',
+      priority: 'medium',
+      startDate: '',
+      endDate: '',
+      notes: ''
+    });
+  };
+  
+  // New handler for rotation plan
+  const handleAddRotationPlan = (e: React.FormEvent) => {
+    e.preventDefault();
+    setRotationPlans([...rotationPlans, {
+      ...newRotationPlan,
+      id: Date.now(),
+      status: 'planned'
+    }]);
+    setIsAddingRotationPlan(false);
+    setNewRotationPlan({
+      farmId: '',
+      title: '',
+      description: '',
+      rotationCrops: [],
+      rotationInterval: '',
+      soilPreparation: '',
+      expectedBenefits: '',
+      startDate: '',
+      endDate: '',
+      notes: ''
+    });
+  };
+  
+  // New handler for rainwater harvesting plan
+  const handleAddRainwaterPlan = (e: React.FormEvent) => {
+    e.preventDefault();
+    setRainwaterPlans([...rainwaterPlans, {
+      ...newRainwaterPlan,
+      id: Date.now(),
+      status: 'planned'
+    }]);
+    setIsAddingRainwaterPlan(false);
+    setNewRainwaterPlan({
+      farmId: '',
+      title: '',
+      description: '',
+      harvestingMethod: '',
+      storageType: '',
+      harvestingCapacity: '',
+      collectionArea: '',
+      filteringMethod: '',
+      usageIntent: '',
+      startDate: '',
+      endDate: '',
+      notes: ''
+    });
+  };
+
+  const updatePlanStatus = (planType: 'planting' | 'fertilizer' | 'pest' | 'irrigation' | 'weatherTask' | 'rotation' | 'rainwater', id: number, status: 'planned' | 'in-progress' | 'completed' | 'cancelled') => {
+    switch (planType) {
+      case 'planting':
+        setPlantingPlans(plantingPlans.map(plan => 
+          plan.id === id ? { ...plan, status } : plan
+        ));
+        break;
+      case 'fertilizer':
+        setFertilizerPlans(fertilizerPlans.map(plan => 
+          plan.id === id ? { ...plan, status } : plan
+        ));
+        break;
+      case 'pest':
+        setPestManagementPlans(pestManagementPlans.map(plan => 
+          plan.id === id ? { ...plan, status } : plan
+        ));
+        break;
+      case 'irrigation':
+        setIrrigationPlans(irrigationPlans.map(plan => 
+          plan.id === id ? { ...plan, status } : plan
+        ));
+        break;
+      case 'weatherTask':
+        setWeatherTaskPlans(weatherTaskPlans.map(plan => 
+          plan.id === id ? { ...plan, status } : plan
+        ));
+        break;
+      case 'rotation':
+        setRotationPlans(rotationPlans.map(plan => 
+          plan.id === id ? { ...plan, status } : plan
+        ));
+        break;
+      case 'rainwater':
+        setRainwaterPlans(rainwaterPlans.map(plan => 
+          plan.id === id ? { ...plan, status } : plan
+        ));
+        break;
+    }
+  };
+
+  const handleDeletePlan = (planType: 'planting' | 'fertilizer' | 'pest' | 'irrigation' | 'weatherTask' | 'rotation' | 'rainwater', id: number) => {
+    setConfirmDelete({ id, type: `${planType}Plan` });
+  };
+
   const confirmDeleteAction = () => {
     if (confirmDelete) {
       switch (confirmDelete.type) {
@@ -477,6 +923,27 @@ const DefaultComponent: React.FC = () => {
         case 'cropEvent':
           setCropPlanEvents(prev => prev.filter(event => event.id !== confirmDelete.eventId));
           break;
+        case 'plantingPlan':
+          setPlantingPlans(plantingPlans.filter(plan => plan.id !== confirmDelete.id));
+          break;
+        case 'fertilizerPlan':
+          setFertilizerPlans(fertilizerPlans.filter(plan => plan.id !== confirmDelete.id));
+          break;
+        case 'pestPlan':
+          setPestManagementPlans(pestManagementPlans.filter(plan => plan.id !== confirmDelete.id));
+          break;
+        case 'irrigationPlan':
+          setIrrigationPlans(irrigationPlans.filter(plan => plan.id !== confirmDelete.id));
+          break;
+        case 'weatherTaskPlan':
+          setWeatherTaskPlans(weatherTaskPlans.filter(plan => plan.id !== confirmDelete.id));
+          break;
+        case 'rotationPlan':
+          setRotationPlans(rotationPlans.filter(plan => plan.id !== confirmDelete.id));
+          break;
+        case 'rainwaterPlan':
+          setRainwaterPlans(rainwaterPlans.filter(plan => plan.id !== confirmDelete.id));
+          break;
         default:
           break;
       }
@@ -502,7 +969,10 @@ const DefaultComponent: React.FC = () => {
       farms,
       tasks,
       issues,
-      cropPlanEvents
+      cropPlanEvents,
+      plantingPlans,
+      fertilizerPlans,
+      pestManagementPlans
     };
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -543,6 +1013,11 @@ const DefaultComponent: React.FC = () => {
         setIssues(importedData.issues);
         setCropPlanEvents(processedEvents);
 
+        // Update planner data if available
+        if (importedData.plantingPlans) setPlantingPlans(importedData.plantingPlans);
+        if (importedData.fertilizerPlans) setFertilizerPlans(importedData.fertilizerPlans);
+        if (importedData.pestManagementPlans) setPestManagementPlans(importedData.pestManagementPlans);
+
         setImportNotification({
           success: true,
           message: 'Data imported successfully'
@@ -559,292 +1034,35 @@ const DefaultComponent: React.FC = () => {
 
   const sustainabilityMetrics = useMemo<ISustainabilityMetrics | null>(() => calculateSustainabilityMetrics(getFilteredFarms(), weatherData), [farms, weatherData, cropFilter]);
 
-  const CropPlanCalendar = () => {
-    const [selectedDate, setSelectedDate] = useState(new Date());
-    const [isAddingEvent, setIsAddingEvent] = useState(false);
-    const [newEvent, setNewEvent] = useState({
-      title: '',
-      start: new Date(),
-      end: new Date(),
-      farmId: 0,
-      type: 'planting',
-      notes: ''
-    });
+  const handleDeleteEvent = (eventId: number) => {
+    setConfirmDelete({ id: 0, type: 'cropEvent', eventId });
+  };
 
-    const daysInMonth = new Date(
-      selectedDate.getFullYear(),
-      selectedDate.getMonth() + 1,
-      0
-    ).getDate();
-
-    const firstDayOfMonth = new Date(
-      selectedDate.getFullYear(),
-      selectedDate.getMonth(),
-      1
-    ).getDay();
-
-    const handleAddEvent = (e: React.FormEvent) => {
-      e.preventDefault();
-      setCropPlanEvents([...cropPlanEvents, {
-        id: Date.now(),
-        ...newEvent,
-        type: newEvent.type as 'planting' | 'fertilizing' | 'harvesting' | 'other'
-      }]);
-      setIsAddingEvent(false);
-      setNewEvent({
-        title: '',
-        start: new Date(),
-        end: new Date(),
-        farmId: 0,
-        type: 'planting',
-        notes: ''
-      });
-    };
-
-    const getEventsForDay = (date: Date) => {
-      return cropPlanEvents.filter(event => {
-        const eventDate = new Date(event.start);
-        return eventDate.getDate() === date.getDate() &&
-               eventDate.getMonth() === date.getMonth() &&
-               eventDate.getFullYear() === date.getFullYear();
-      });
-    };
-
-    const eventColors = {
-      planting: 'bg-blue-100 text-blue-800',
-      fertilizing: 'bg-green-100 text-green-800',
-      harvesting: 'bg-purple-100 text-purple-800',
-      other: 'bg-gray-100 text-gray-800'
-    };
-
-    const handleExportPlan = () => {
-      const exportData = {
-        version: "1.0",
-        exportDate: new Date().toISOString(),
-        events: cropPlanEvents
-      };
-  
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `crop-plan-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    };
-  
-    const handleImportPlan = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (!file) return;
-  
-      const reader = new FileReader();
-      reader.onload = (e: ProgressEvent<FileReader>) => {
-        try {
-          const importedData = JSON.parse(e.target?.result as string);
-          
-          // Validate the imported data
-          if (!importedData.events || !Array.isArray(importedData.events)) {
-            throw new Error('Invalid file format');
-          }
-  
-          // Convert date strings back to Date objects
-          const processedEvents = importedData.events.map((event: any) => ({
-            ...event,
-            start: new Date(event.start),
-            end: new Date(event.end)
-          }));
-  
-          // Merge with existing events, avoid duplicates by checking IDs
-          const existingIds = new Set(cropPlanEvents.map(e => e.id));
-          const newEvents = processedEvents.filter((e: CropPlanEvent) => !existingIds.has(e.id));
-          
-          setCropPlanEvents([...cropPlanEvents, ...newEvents]);
-        } catch (error) {
-          alert('Error importing file: Invalid format');
-        }
-      };
-      reader.readAsText(file);
-    };
-
-    const handleDeleteEvent = (eventId: number) => {
-      setConfirmDelete({ id: 0, type: 'cropEvent', eventId });
-    };
-
+  const PlannerView = () => {
     return (
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Crop Planning Calendar</CardTitle>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setMonth(newDate.getMonth() - 1);
-                  setSelectedDate(newDate);
-                }}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setMonth(newDate.getMonth() + 1);
-                  setSelectedDate(newDate);
-                }}
-              >
-                Next
-              </Button>
-              <div className="space-x-2">
-                <Button onClick={() => setIsAddingEvent(true)}>Add Event</Button>
-                <Button variant="outline" onClick={handleExportPlan}>
-                  Export
-                </Button>
-                <div className="relative inline-block">
-                  <Button variant="outline" onClick={() => document.getElementById('importFile')?.click()}>
-                    Import
-                  </Button>
-                  <input
-                    type="file"
-                    id="importFile"
-                    className="hidden"
-                    accept=".json"
-                    onChange={handleImportPlan}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-          <p className="text-lg font-medium">
-            {selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-7 gap-1">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="text-center font-medium p-2">
-                {day}
-              </div>
-            ))}
-            {Array.from({ length: firstDayOfMonth }).map((_, index) => (
-              <div key={`empty-${index}`} className="p-2 border min-h-[100px]" />
-            ))}
-            {Array.from({ length: daysInMonth }).map((_, index) => {
-              const date = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), index + 1);
-              const events = getEventsForDay(date);
-              
-              return (
-                <div key={index} className="p-2 border min-h-[100px]">
-                  <div className="font-medium">{index + 1}</div>
-                  <div className="space-y-1">
-                    {events.map(event => (
-                      <div
-                        key={event.id}
-                        className={`group relative p-1 rounded text-xs ${eventColors[event.type]}`}
-                        title={`${event.title}\nFarm: ${farms.find(f => f.id === event.farmId)?.name}\n${event.notes}`}
-                      >
-                        <div className="flex justify-between items-center">
-                          <span className="truncate">{event.title}</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteEvent(event.id);
-                            }}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-
-        <Dialog open={isAddingEvent} onOpenChange={setIsAddingEvent}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Crop Plan Event</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleAddEvent} className="space-y-4">
-              <div>
-                <Label>Title</Label>
-                <Input
-                  value={newEvent.title}
-                  onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                  required
-                  className="border rounded px-2 py-1"
-                />
-              </div>
-              <div>
-                <Label>Farm</Label>
-                <select
-                  className="w-full p-2 border rounded"
-                  value={newEvent.farmId}
-                  onChange={(e) => setNewEvent({ ...newEvent, farmId: Number(e.target.value) })}
-                  required
-                >
-                  <option value="">Select Farm</option>
-                  {farms.map(farm => (
-                    <option key={farm.id} value={farm.id}>{farm.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label>Type</Label>
-                <select
-                  className="w-full p-2 border rounded"
-                  value={newEvent.type}
-                  onChange={(e) => setNewEvent({ ...newEvent, type: e.target.value })}
-                  required
-                >
-                  <option value="planting">Planting</option>
-                  <option value="fertilizing">Fertilizing</option>
-                  <option value="harvesting">Harvesting</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div>
-                <Label>Start Date</Label>
-                <Input
-                  type="date"
-                  value={newEvent.start.toISOString().split('T')[0]}
-                  onChange={(e) => setNewEvent({ ...newEvent, start: new Date(e.target.value) })}
-                  required
-                  className="border rounded px-2 py-1"
-                />
-              </div>
-              <div>
-                <Label>End Date</Label>
-                <Input
-                  type="date"
-                  value={newEvent.end.toISOString().split('T')[0]}
-                  onChange={(e) => setNewEvent({ ...newEvent, end: new Date(e.target.value) })}
-                  required
-                  className="border rounded px-2 py-1"
-                />
-              </div>
-              <div>
-                <Label>Notes</Label>
-                <Input
-                  value={newEvent.notes}
-                  onChange={(e) => setNewEvent({ ...newEvent, notes: e.target.value })}
-                  className="border rounded px-2 py-1"
-                />
-              </div>
-              <Button type="submit" className="w-full">Add Event</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </Card>
+      <PlannerDashboard
+        farms={farms}
+        plantingPlans={plantingPlans}
+        fertilizerPlans={fertilizerPlans}
+        pestManagementPlans={pestManagementPlans}
+        irrigationPlans={irrigationPlans}
+        weatherTaskPlans={weatherTaskPlans}
+        rotationPlans={rotationPlans}
+        rainwaterPlans={rainwaterPlans}
+        setIsAddingPlantingPlan={setIsAddingPlantingPlan}
+        setIsAddingFertilizerPlan={setIsAddingFertilizerPlan}
+        setIsAddingPestPlan={setIsAddingPestPlan}
+        setIsAddingIrrigationPlan={setIsAddingIrrigationPlan}
+        setIsAddingWeatherTaskPlan={setIsAddingWeatherTaskPlan}
+        setIsAddingRotationPlan={setIsAddingRotationPlan}
+        setIsAddingRainwaterPlan={setIsAddingRainwaterPlan}
+        updatePlanStatus={updatePlanStatus}
+        handleDeletePlan={handleDeletePlan}
+        cropPlanEvents={cropPlanEvents}
+        setCropPlanEvents={setCropPlanEvents}
+        handleDeleteEvent={handleDeleteEvent}
+        weatherData={weatherData}
+      />
     );
   };
 
@@ -1067,8 +1285,139 @@ const DefaultComponent: React.FC = () => {
     </div>
   );
 
+  // Add this new function component for planner recommendations
+  const PlannerRecommendations = () => {
+    // Combine all plan types
+    const allPlans = [
+      ...plantingPlans.map(plan => ({ ...plan, type: 'planting' })),
+      ...fertilizerPlans.map(plan => ({ ...plan, type: 'fertilizer' })),
+      ...pestManagementPlans.map(plan => ({ ...plan, type: 'pest' })),
+      ...irrigationPlans.map(plan => ({ ...plan, type: 'irrigation' })),
+      ...weatherTaskPlans.map(plan => ({ ...plan, type: 'weatherTask' })),
+      ...rotationPlans.map(plan => ({ ...plan, type: 'rotation' })),
+      ...rainwaterPlans.map(plan => ({ ...plan, type: 'rainwater' })),
+    ];
+    
+    // Get upcoming plans (next 30 days) that are not completed or cancelled
+    const upcomingPlans = allPlans
+      .filter(plan => {
+        const startDate = new Date(plan.startDate);
+        const today = new Date();
+        const thirtyDaysFromNow = new Date(today);
+        thirtyDaysFromNow.setDate(today.getDate() + 30);
+        
+        return startDate >= today && 
+               startDate <= thirtyDaysFromNow && 
+               plan.status !== 'completed' && 
+               plan.status !== 'cancelled';
+      })
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+      .slice(0, 4); // Show only next 4 plans
+    
+    const getTypeIcon = (type: string) => {
+      switch(type) {
+        case 'planting': return <Leaf className="h-4 w-4 text-green-600" />;
+        case 'fertilizer': return <Leaf className="h-4 w-4 text-blue-600" />;
+        case 'pest': return <Bug className="h-4 w-4 text-red-600" />;
+        case 'irrigation': return <Droplet className="h-4 w-4 text-blue-600" />;
+        case 'weatherTask': return <Cloud className="h-4 w-4 text-gray-600" />;
+        case 'rotation': return <RotateCw className="h-4 w-4 text-orange-600" />;
+        case 'rainwater': return <CloudRain className="h-4 w-4 text-indigo-600" />;
+        default: return <Info className="h-4 w-4 text-gray-600" />;
+      }
+    };
+
+    const getTypeLabel = (type: string) => {
+      switch(type) {
+        case 'planting': return 'Planting';
+        case 'fertilizer': return 'Fertilizer';
+        case 'pest': return 'Pest Management';
+        case 'irrigation': return 'Irrigation';
+        case 'weatherTask': return 'Weather Task';
+        case 'rotation': return 'Crop Rotation';
+        case 'rainwater': return 'Rainwater';
+        default: return 'Plan';
+      }
+    };
+    
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Planner Recommendations</span>
+            <span className="text-sm font-normal text-gray-500">Next 30 days</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {upcomingPlans.length > 0 ? (
+              upcomingPlans.map(plan => {
+                const farmName = farms.find(f => f.id === parseInt(plan.farmId))?.name || "Unknown Farm";
+                
+                return (
+                  <div 
+                    key={`${plan.type}-${plan.id}`} 
+                    className={`p-3 rounded-lg border ${
+                      plan.status === 'in-progress' ? 'bg-blue-50' : 'bg-white'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1">
+                        {getTypeIcon(plan.type)}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between">
+                          <p className="font-medium text-gray-800">{plan.title}</p>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            plan.status === 'planned' ? 'bg-yellow-100 text-yellow-800' : 
+                            plan.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {plan.status.charAt(0).toUpperCase() + plan.status.slice(1)}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center text-sm text-gray-500 mt-1">
+                          <span className="font-medium text-gray-600 mr-2">{getTypeLabel(plan.type)}</span>
+                          <span>•</span>
+                          <span className="mx-2">{farmName}</span>
+                          <span>•</span>
+                          <span className="ml-2">
+                            {new Date(plan.startDate).toLocaleDateString()}
+                          </span>
+                        </div>
+                        
+                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                          {plan.description}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center p-4 text-gray-500">
+                No upcoming plans for the next 30 days
+              </div>
+            )}
+            
+            {upcomingPlans.length > 0 && (
+              <Button 
+                variant="outline" 
+                className="w-full mt-2" 
+                onClick={() => setActiveTab('planners')}
+              >
+                View All Plans
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
-    <div>
+    <>
       {/* Using our imported Walkthrough component */}
       {showWalkthrough && <Walkthrough 
         onComplete={handleWalkthroughComplete} 
@@ -1119,6 +1468,7 @@ const DefaultComponent: React.FC = () => {
                 <TabsTrigger data-walkthrough="reports-tab" value="reports">Reports</TabsTrigger>
                 <TabsTrigger value="history">History</TabsTrigger>
                 <TabsTrigger data-walkthrough="crop-plan" value="cropplan">Crop Plan</TabsTrigger>
+                <TabsTrigger data-walkthrough="planners-tab" value="planners">Planners</TabsTrigger>
                 <TabsTrigger value="instructions"><Info className="h-4 w-4 mr-2" />Instructions</TabsTrigger>
               </TabsList>
             </div>
@@ -1362,6 +1712,8 @@ const DefaultComponent: React.FC = () => {
                   setCropFilter={setCropFilter}
                   farms={getFilteredFarms()}
                 />
+                {/* Add the new PlannerRecommendations component */}
+                <PlannerRecommendations />
                 {/* Use the imported WeatherPreview component */}
                 <WeatherPreview weatherData={weatherData} />
                 <UpcomingCropPlan />
@@ -1738,7 +2090,11 @@ const DefaultComponent: React.FC = () => {
             </TabsContent>
 
             <TabsContent value="cropplan">
-              <CropPlanCalendar />
+              <PlannerView />
+            </TabsContent>
+
+            <TabsContent value="planners">
+              <PlannerView />
             </TabsContent>
           </Tabs>
         </div>
@@ -1757,6 +2113,69 @@ const DefaultComponent: React.FC = () => {
         </DialogContent>
       </Dialog>
 
+      <PlantingPlanForm
+        isOpen={isAddingPlantingPlan}
+        onOpenChange={setIsAddingPlantingPlan}
+        farms={farms}
+        newPlantingPlan={newPlantingPlan}
+        setNewPlantingPlan={setNewPlantingPlan}
+        handleAddPlantingPlan={handleAddPlantingPlan}
+      />
+
+      <FertilizerPlanForm
+        isOpen={isAddingFertilizerPlan}
+        onOpenChange={setIsAddingFertilizerPlan}
+        farms={farms}
+        newFertilizerPlan={newFertilizerPlan}
+        setNewFertilizerPlan={setNewFertilizerPlan}
+        handleAddFertilizerPlan={handleAddFertilizerPlan}
+      />
+
+      <PestManagementPlanForm
+        isOpen={isAddingPestPlan}
+        onOpenChange={setIsAddingPestPlan}
+        farms={farms}
+        newPestPlan={newPestPlan}
+        setNewPestPlan={setNewPestPlan}
+        handleAddPestPlan={handleAddPestPlan}
+      />
+      
+      <IrrigationPlanForm
+        isOpen={isAddingIrrigationPlan}
+        onOpenChange={setIsAddingIrrigationPlan}
+        farms={farms}
+        newIrrigationPlan={newIrrigationPlan}
+        setNewIrrigationPlan={setNewIrrigationPlan}
+        handleAddIrrigationPlan={handleAddIrrigationPlan}
+      />
+      
+      <WeatherTaskPlanForm
+        isOpen={isAddingWeatherTaskPlan}
+        onOpenChange={setIsAddingWeatherTaskPlan}
+        farms={farms}
+        newWeatherTaskPlan={newWeatherTaskPlan}
+        setNewWeatherTaskPlan={setNewWeatherTaskPlan}
+        handleAddWeatherTaskPlan={handleAddWeatherTaskPlan}
+      />
+      
+      <RotationPlanForm
+        isOpen={isAddingRotationPlan}
+        onOpenChange={setIsAddingRotationPlan}
+        farms={farms}
+        newRotationPlan={newRotationPlan}
+        setNewRotationPlan={setNewRotationPlan}
+        handleAddRotationPlan={handleAddRotationPlan}
+      />
+      
+      <RainwaterPlanForm
+        isOpen={isAddingRainwaterPlan}
+        onOpenChange={setIsAddingRainwaterPlan}
+        farms={farms}
+        newRainwaterPlan={newRainwaterPlan}
+        setNewRainwaterPlan={setNewRainwaterPlan}
+        handleAddRainwaterPlan={handleAddRainwaterPlan}
+      />
+      
       <Dialog 
         open={!!importNotification} 
         onOpenChange={() => setImportNotification(null)}
@@ -1779,7 +2198,7 @@ const DefaultComponent: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 };
 
