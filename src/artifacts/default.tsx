@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Bar } from 'recharts';
-import { Droplet, Leaf, LayoutDashboard, Info, Trash2, Edit3, RotateCw, Download, Upload, Settings, Cloud, CloudRain, Bug } from 'lucide-react';
+import { Droplet, Leaf, LayoutDashboard, Info, Trash2, Edit3, RotateCw, Download, Upload, Settings, CloudRain } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 import {
@@ -1285,136 +1285,63 @@ const DefaultComponent = (): React.ReactNode => {
     </div>
   );
 
-  // Add this new function component for planner recommendations
-  const PlannerRecommendations = () => {
-    // Combine all plan types
-    const allPlans = [
-      ...plantingPlans.map(plan => ({ ...plan, type: 'planting' })),
-      ...fertilizerPlans.map(plan => ({ ...plan, type: 'fertilizer' })),
-      ...pestManagementPlans.map(plan => ({ ...plan, type: 'pest' })),
-      ...irrigationPlans.map(plan => ({ ...plan, type: 'irrigation' })),
-      ...weatherTaskPlans.map(plan => ({ ...plan, type: 'weatherTask' })),
-      ...rotationPlans.map(plan => ({ ...plan, type: 'rotation' })),
-      ...rainwaterPlans.map(plan => ({ ...plan, type: 'rainwater' })),
-    ];
+  // Fix the weather-based recommendations logic with better accuracy
+  const getPlanningRecommendations = useMemo(() => {
+    // Check if there's weather data available
+    if (!weatherData || weatherData.length === 0) {
+      return {
+        shouldRecommendIrrigation: false,
+        shouldDelayFertilizer: false,
+        shouldHarvestSoon: false,
+        shouldPrepareRainwater: false
+      };
+    }
     
-    // Get upcoming plans (next 30 days) that are not completed or cancelled
-    const upcomingPlans = allPlans
-      .filter(plan => {
-        const startDate = new Date(plan.startDate);
-        const today = new Date();
-        const thirtyDaysFromNow = new Date(today);
-        thirtyDaysFromNow.setDate(today.getDate() + 30);
-        
-        return startDate >= today && 
-               startDate <= thirtyDaysFromNow && 
-               plan.status !== 'completed' && 
-               plan.status !== 'cancelled';
-      })
-      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-      .slice(0, 4); // Show only next 4 plans
+    const nextWeekWeather = weatherData.slice(0, 7);
     
-    const getTypeIcon = (type: string) => {
-      switch(type) {
-        case 'planting': return <Leaf className="h-4 w-4 text-green-600" />;
-        case 'fertilizer': return <Leaf className="h-4 w-4 text-blue-600" />;
-        case 'pest': return <Bug className="h-4 w-4 text-red-600" />;
-        case 'irrigation': return <Droplet className="h-4 w-4 text-blue-600" />;
-        case 'weatherTask': return <Cloud className="h-4 w-4 text-gray-600" />;
-        case 'rotation': return <RotateCw className="h-4 w-4 text-orange-600" />;
-        case 'rainwater': return <CloudRain className="h-4 w-4 text-indigo-600" />;
-        default: return <Info className="h-4 w-4 text-gray-600" />;
-      }
-    };
-
-    const getTypeLabel = (type: string) => {
-      switch(type) {
-        case 'planting': return 'Planting';
-        case 'fertilizer': return 'Fertilizer';
-        case 'pest': return 'Pest Management';
-        case 'irrigation': return 'Irrigation';
-        case 'weatherTask': return 'Weather Task';
-        case 'rotation': return 'Crop Rotation';
-        case 'rainwater': return 'Rainwater';
-        default: return 'Plan';
-      }
-    };
-    
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Planner Recommendations</span>
-            <span className="text-sm font-normal text-gray-500">Next 30 days</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {upcomingPlans.length > 0 ? (
-              upcomingPlans.map(plan => {
-                const farmName = farms.find(f => f.id === parseInt(plan.farmId))?.name || "Unknown Farm";
-                
-                return (
-                  <div 
-                    key={`${plan.type}-${plan.id}`} 
-                    className={`p-3 rounded-lg border ${
-                      plan.status === 'in-progress' ? 'bg-blue-50' : 'bg-white'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1">
-                        {getTypeIcon(plan.type)}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between">
-                          <p className="font-medium text-gray-800">{plan.title}</p>
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            plan.status === 'planned' ? 'bg-yellow-100 text-yellow-800' : 
-                            plan.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {plan.status.charAt(0).toUpperCase() + plan.status.slice(1)}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center text-sm text-gray-500 mt-1">
-                          <span className="font-medium text-gray-600 mr-2">{getTypeLabel(plan.type)}</span>
-                          <span>•</span>
-                          <span className="mx-2">{farmName}</span>
-                          <span>•</span>
-                          <span className="ml-2">
-                            {new Date(plan.startDate).toLocaleDateString()}
-                          </span>
-                        </div>
-                        
-                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                          {plan.description}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-center p-4 text-gray-500">
-                No upcoming plans for the next 30 days
-              </div>
-            )}
-            
-            {upcomingPlans.length > 0 && (
-              <Button 
-                variant="outline" 
-                className="w-full mt-2" 
-                onClick={() => setActiveTab('planners')}
-              >
-                View All Plans
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+    // Check for precipitation in the forecast
+    const rainyDays = nextWeekWeather.filter(day => 
+      day.weather.toLowerCase().includes('rain') || 
+      day.weather.toLowerCase().includes('shower') || 
+      day.weather.toLowerCase().includes('drizzle') ||
+      day.weather.toLowerCase().includes('thunderstorm')
     );
-  };
+    
+    // If there's rain in the forecast, don't recommend irrigation
+    const hasRainInForecast = rainyDays.length > 0;
+    
+    // Check if there's a hot, dry period coming up - only if no rain is forecasted
+    const shouldRecommendIrrigation = !hasRainInForecast && nextWeekWeather.some(day => 
+      day.temp > 85 && 
+      !day.weather.toLowerCase().includes('rain') && 
+      !day.weather.toLowerCase().includes('shower') && 
+      !day.weather.toLowerCase().includes('drizzle')
+    );
+    
+    // Check if there's rain forecast in the next 3 days
+    const shouldDelayFertilizer = nextWeekWeather.slice(0, 3).some(day => 
+      day.weather.toLowerCase().includes('rain') || 
+      day.weather.toLowerCase().includes('shower') || 
+      day.weather.toLowerCase().includes('drizzle')
+    );
+    
+    // Check if there's a severe weather event coming that might damage crops
+    const shouldHarvestSoon = nextWeekWeather.slice(0, 5).some(day => 
+      day.weather.toLowerCase().includes('storm') || 
+      day.weather.toLowerCase().includes('heavy rain') || 
+      day.weather.toLowerCase().includes('thunderstorm')
+    );
+
+    // Check for rain forecasts for rainwater harvesting - only recommend if there's actual rain coming
+    const shouldPrepareRainwater = hasRainInForecast;
+    
+    return {
+      shouldRecommendIrrigation,
+      shouldDelayFertilizer,
+      shouldHarvestSoon,
+      shouldPrepareRainwater
+    };
+  }, [weatherData]);
 
   return (
     <>
@@ -1467,7 +1394,6 @@ const DefaultComponent = (): React.ReactNode => {
                 <TabsTrigger data-walkthrough="issues-tab" value="issues">Farm Issues</TabsTrigger>
                 <TabsTrigger data-walkthrough="reports-tab" value="reports">Reports</TabsTrigger>
                 <TabsTrigger value="history">History</TabsTrigger>
-                <TabsTrigger data-walkthrough="crop-plan" value="cropplan">Crop Plan</TabsTrigger>
                 <TabsTrigger data-walkthrough="planners-tab" value="planners">Planners</TabsTrigger>
                 <TabsTrigger value="instructions"><Info className="h-4 w-4 mr-2" />Instructions</TabsTrigger>
               </TabsList>
@@ -1712,14 +1638,167 @@ const DefaultComponent = (): React.ReactNode => {
                   setCropFilter={setCropFilter}
                   farms={getFilteredFarms()}
                 />
-                {/* Add the new PlannerRecommendations component */}
-                <PlannerRecommendations />
                 {/* Use the imported WeatherPreview component */}
                 <WeatherPreview weatherData={weatherData} />
                 <UpcomingCropPlan />
                 <FarmIssues />
                 {/* Use the imported TaskManager component */}
                 <TaskManager tasks={tasks} setTasks={setTasks} handleDeleteTask={handleDeleteTask} />
+
+                {/* Planning Recommendations Card - with fixed logic */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Planning Recommendations</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {/* Show weather summary first */}
+                      {weatherData.length > 0 && (
+                        <div className="flex items-center p-2 bg-gray-50 rounded-md mb-2">
+                          <div className="flex-grow">
+                            <p className="font-medium">Weather Summary</p>
+                            <p className="text-xs text-gray-600">
+                              {getPlanningRecommendations.shouldPrepareRainwater 
+                                ? "Rain is expected in the coming days." 
+                                : "Mostly dry conditions expected."}
+                              {" "}Average high: {weatherData.slice(0, 5).reduce((sum, day) => sum + day.temp, 0) / 5}°F
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Only show fertilizer alert if it's actually going to rain */}
+                      {weatherData.length > 0 && getPlanningRecommendations.shouldDelayFertilizer && (
+                        <div className="flex items-center p-2 bg-green-50 rounded-md">
+                          <Leaf className="h-5 w-5 text-green-500 mr-3" />
+                          <div className="flex-grow">
+                            <p className="font-medium">Fertilizer Application Alert</p>
+                            <p className="text-xs text-gray-600">
+                              Rain is forecasted soon. Consider postponing fertilizer application to avoid runoff.
+                            </p>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="ml-auto text-green-600" 
+                            onClick={() => {
+                              setIsAddingFertilizerPlan(true);
+                            }}
+                          >
+                            Plan
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {/* Only show irrigation if there's NO rain expected */}
+                      {weatherData.length > 0 && getPlanningRecommendations.shouldRecommendIrrigation && (
+                        <div className="flex items-center p-2 bg-blue-50 rounded-md">
+                          <Droplet className="h-5 w-5 text-blue-500 mr-3" />
+                          <div className="flex-grow">
+                            <p className="font-medium">Irrigation Needed</p>
+                            <p className="text-xs text-gray-600">
+                              Hot, dry weather ahead. Consider scheduling irrigation in the next few days.
+                            </p>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="ml-auto text-blue-600" 
+                            onClick={() => {
+                              setIsAddingIrrigationPlan(true);
+                            }}
+                          >
+                            Plan
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {irrigationPlans.some(plan => plan.status === 'planned') && (
+                        <div className="flex items-center p-2 bg-green-50 rounded-md">
+                          <Droplet className="h-5 w-5 text-green-500 mr-3" />
+                          <div className="flex-grow">
+                            <p className="font-medium">Irrigation Scheduled</p>
+                            <p className="text-xs text-gray-600">
+                              {irrigationPlans.filter(p => p.status === 'planned').length} upcoming irrigation {irrigationPlans.filter(p => p.status === 'planned').length === 1 ? 'plan' : 'plans'}
+                            </p>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="ml-auto text-green-600" 
+                            onClick={() => {
+                              setActiveTab('planners');
+                            }}
+                          >
+                            View
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {rotationPlans.some(plan => plan.status === 'planned') && (
+                        <div className="flex items-center p-2 bg-orange-50 rounded-md">
+                          <RotateCw className="h-5 w-5 text-orange-500 mr-3" />
+                          <div className="flex-grow">
+                            <p className="font-medium">Crop Rotation Plans</p>
+                            <p className="text-xs text-gray-600">
+                              {rotationPlans.filter(p => p.status === 'planned').length} crop rotation {rotationPlans.filter(p => p.status === 'planned').length === 1 ? 'plan' : 'plans'} awaiting action
+                            </p>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="ml-auto text-orange-600" 
+                            onClick={() => {
+                              setActiveTab('planners');
+                            }}
+                          >
+                            View
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {/* Only show rainwater harvesting if rain is actually expected */}
+                      {getPlanningRecommendations.shouldPrepareRainwater && (
+                        <div className="flex items-center p-2 bg-cyan-50 rounded-md">
+                          <CloudRain className="h-5 w-5 text-cyan-500 mr-3" />
+                          <div className="flex-grow">
+                            <p className="font-medium">Rainwater Harvesting Opportunity</p>
+                            <p className="text-xs text-gray-600">
+                              Rain is forecasted soon. Consider preparing rainwater harvesting systems.
+                            </p>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="ml-auto text-cyan-600" 
+                            onClick={() => {
+                              setIsAddingRainwaterPlan(true);
+                            }}
+                          >
+                            Create Plan
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {!getPlanningRecommendations.shouldRecommendIrrigation && 
+                       !getPlanningRecommendations.shouldDelayFertilizer &&
+                       !getPlanningRecommendations.shouldHarvestSoon &&
+                       !getPlanningRecommendations.shouldPrepareRainwater &&
+                       !irrigationPlans.some(plan => plan.status === 'planned') &&
+                       !rotationPlans.some(plan => plan.status === 'planned') &&
+                       !weatherTaskPlans.some(plan => 
+                          plan.status === 'planned' && 
+                          weatherData.some(day => 
+                            day.weather.toLowerCase().includes((plan.weatherCondition || '').toLowerCase())
+                          )
+                        ) && (
+                        <p className="text-center text-gray-500 py-4">
+                          No immediate planning recommendations at this time
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </TabsContent>
 
@@ -2087,10 +2166,6 @@ const DefaultComponent = (): React.ReactNode => {
                 
                 setConfirmDelete={setConfirmDelete} 
               />
-            </TabsContent>
-
-            <TabsContent value="cropplan">
-              <PlannerView />
             </TabsContent>
 
             <TabsContent value="planners">
