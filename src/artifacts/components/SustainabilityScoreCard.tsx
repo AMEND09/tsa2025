@@ -34,6 +34,7 @@ const SustainabilityScoreCard: React.FC<SustainabilityScoreCardProps> = ({
           {sustainabilityMetrics ? sustainabilityMetrics.overallScore : '-'}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+          {/* Base sustainability metrics */}
           <div>
             <p className="text-gray-500">Water Efficiency</p>
             <p className="font-medium text-blue-600">
@@ -54,7 +55,7 @@ const SustainabilityScoreCard: React.FC<SustainabilityScoreCardProps> = ({
           </div>
           <div>
             <p className="text-gray-500">Soil Quality</p>
-            <p className="font-medium text-brown-600">
+            <p className="font-medium text-amber-600">
               {sustainabilityMetrics ? `${sustainabilityMetrics.soilQualityScore}%` : '-'}
             </p>
           </div>
@@ -64,7 +65,45 @@ const SustainabilityScoreCard: React.FC<SustainabilityScoreCardProps> = ({
               {sustainabilityMetrics ? `${sustainabilityMetrics.rotationScore}%` : '-'}
             </p>
           </div>
+          
+          {/* Tracker sustainability metrics */}
+          {sustainabilityMetrics?.carbonFootprint !== undefined && (
+            <div>
+              <p className="text-gray-500">Carbon Footprint</p>
+              <p className="font-medium text-red-600">
+                {`${sustainabilityMetrics.carbonFootprint}%`}
+              </p>
+            </div>
+          )}
+          
+          {sustainabilityMetrics?.energyEfficiency !== undefined && (
+            <div>
+              <p className="text-gray-500">Energy Efficiency</p>
+              <p className="font-medium text-blue-700">
+                {`${sustainabilityMetrics.energyEfficiency}%`}
+              </p>
+            </div>
+          )}
+          
+          {sustainabilityMetrics?.fuelEfficiency !== undefined && (
+            <div>
+              <p className="text-gray-500">Fuel Efficiency</p>
+              <p className="font-medium text-yellow-700">
+                {`${sustainabilityMetrics.fuelEfficiency}%`}
+              </p>
+            </div>
+          )}
+          
+          {sustainabilityMetrics?.renewablePercentage !== undefined && (
+            <div>
+              <p className="text-gray-500">Renewable Energy</p>
+              <p className="font-medium text-emerald-600">
+                {`${sustainabilityMetrics.renewablePercentage.toFixed(1)}%`}
+              </p>
+            </div>
+          )}
         </div>
+        
         {sustainabilityMetrics && (
           <div className="mt-4 text-sm text-gray-500">
             <p className="mb-2">Recommendations:</p>
@@ -83,6 +122,15 @@ const SustainabilityScoreCard: React.FC<SustainabilityScoreCardProps> = ({
               )}
               {sustainabilityMetrics.rotationScore < 80 && (
                 <li>Consider implementing more diverse crop rotations</li>
+              )}
+              {sustainabilityMetrics.carbonFootprint !== undefined && sustainabilityMetrics.carbonFootprint < 70 && (
+                <li>Reduce carbon emissions through improved practices and carbon sequestration</li>
+              )}
+              {sustainabilityMetrics.energyEfficiency !== undefined && sustainabilityMetrics.energyEfficiency < 70 && (
+                <li>Improve energy efficiency with better equipment and renewable sources</li>
+              )}
+              {sustainabilityMetrics.fuelEfficiency !== undefined && sustainabilityMetrics.fuelEfficiency < 70 && (
+                <li>Optimize equipment usage to reduce fuel consumption</li>
               )}
             </ul>
           </div>
