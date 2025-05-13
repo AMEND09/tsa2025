@@ -486,12 +486,20 @@ const DefaultComponent = (): React.ReactNode => {
 
   const fetchUserLocation = async () => {
     try {
-      const response = await fetch('https://ipapi.co/json/');
+      // Using geojs.io instead of ipapi.co to avoid CORS issues
+      const response = await fetch('https://get.geojs.io/v1/ip/geo.json');
       const data = await response.json();
       const { latitude, longitude } = data;
-      fetchWeatherData(latitude, longitude);
+      
+      // Fallback to default coordinates if the API fails
+      fetchWeatherData(
+        latitude ? parseFloat(latitude) : 40.7128, 
+        longitude ? parseFloat(longitude) : -74.0060
+      );
     } catch (error) {
       console.error('Error fetching user location:', error);
+      // Fallback to default coordinates (New York City) if API fails
+      fetchWeatherData(40.7128, -74.0060);
     }
   };
 
