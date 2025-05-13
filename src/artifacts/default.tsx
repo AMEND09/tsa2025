@@ -21,10 +21,11 @@ import {
   ExportData,
   PlanItem
 } from './types';
+import { FuelRecord, SoilRecord, CarbonEmissionSource, CarbonSequestrationActivity, EnergyRecord } from './models/sustainability';
 
 import {
   walkthroughStyles,
-  calculateSustainabilityMetrics,
+  calculateSustainabilityMetricsWithTrackers,
   getWeatherInfo
 } from './utils';
 
@@ -45,6 +46,7 @@ import IrrigationPlanForm from './components/IrrigationPlanForm';
 import WeatherTaskPlanForm from './components/WeatherTaskPlanForm';
 import RotationPlanForm from './components/RotationPlanForm';
 import RainwaterPlanForm from './components/RainwaterPlanForm';
+import TrackerDashboard from './components/TrackerDashboard';
 
 const DefaultComponent = (): React.ReactNode => {
   // Define walkthrough steps for the Walkthrough component
@@ -211,6 +213,32 @@ const DefaultComponent = (): React.ReactNode => {
   
   const [rainwaterPlans, setRainwaterPlans] = useState<PlanItem[]>(() => {
     const saved = localStorage.getItem('rainwaterPlans');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Add state for tracker components
+  const [fuelRecords, setFuelRecords] = useState<FuelRecord[]>(() => {
+    const saved = localStorage.getItem('fuelRecords');
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [soilRecords, setSoilRecords] = useState<SoilRecord[]>(() => {
+    const saved = localStorage.getItem('soilRecords');
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [emissionSources, setEmissionSources] = useState<CarbonEmissionSource[]>(() => {
+    const saved = localStorage.getItem('emissionSources');
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [sequestrationActivities, setSequestrationActivities] = useState<CarbonSequestrationActivity[]>(() => {
+    const saved = localStorage.getItem('sequestrationActivities');
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [energyRecords, setEnergyRecords] = useState<EnergyRecord[]>(() => {
+    const saved = localStorage.getItem('energyRecords');
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -435,15 +463,43 @@ const DefaultComponent = (): React.ReactNode => {
   useEffect(() => {
     localStorage.setItem('rainwaterPlans', JSON.stringify(rainwaterPlans));
   }, [rainwaterPlans]);
+  
+  useEffect(() => {
+    localStorage.setItem('fuelRecords', JSON.stringify(fuelRecords));
+  }, [fuelRecords]);
+  
+  useEffect(() => {
+    localStorage.setItem('soilRecords', JSON.stringify(soilRecords));
+  }, [soilRecords]);
+  
+  useEffect(() => {
+    localStorage.setItem('emissionSources', JSON.stringify(emissionSources));
+  }, [emissionSources]);
+  
+  useEffect(() => {
+    localStorage.setItem('sequestrationActivities', JSON.stringify(sequestrationActivities));
+  }, [sequestrationActivities]);
+  
+  useEffect(() => {
+    localStorage.setItem('energyRecords', JSON.stringify(energyRecords));
+  }, [energyRecords]);
 
   const fetchUserLocation = async () => {
     try {
-      const response = await fetch('https://ipapi.co/json/');
+      // Using geojs.io instead of ipapi.co to avoid CORS issues
+      const response = await fetch('https://get.geojs.io/v1/ip/geo.json');
       const data = await response.json();
       const { latitude, longitude } = data;
-      fetchWeatherData(latitude, longitude);
+      
+      // Fallback to default coordinates if the API fails
+      fetchWeatherData(
+        latitude ? parseFloat(latitude) : 40.7128, 
+        longitude ? parseFloat(longitude) : -74.0060
+      );
     } catch (error) {
       console.error('Error fetching user location:', error);
+      // Fallback to default coordinates (New York City) if API fails
+      fetchWeatherData(40.7128, -74.0060);
     }
   };
 
@@ -972,7 +1028,17 @@ const DefaultComponent = (): React.ReactNode => {
       cropPlanEvents,
       plantingPlans,
       fertilizerPlans,
-      pestManagementPlans
+      pestManagementPlans,
+      irrigationPlans,
+      weatherTaskPlans,
+      rotationPlans,
+      rainwaterPlans,
+      // Tracker data
+      fuelRecords,
+      soilRecords,
+      emissionSources,
+      sequestrationActivities,
+      energyRecords
     };
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -1000,39 +1066,112 @@ const DefaultComponent = (): React.ReactNode => {
           throw new Error('Invalid file format');
         }
 
-        // Convert date strings back to Date objects in cropPlanEvents
-        const processedEvents = importedData.cropPlanEvents.map(event => ({
-          ...event,
-          start: new Date(event.start),
-          end: new Date(event.end)
-        }));
+        // Convert date strings back to Date objects in cropPlanEvents if they exist
+        let processedEvents: CropPlanEvent[] = [];
+        if (importedData.cropPlanEvents && Array.isArray(importedData.cropPlanEvents)) {
+          processedEvents = importedData.cropPlanEvents.map(event => ({
+            ...event,
+            start: new Date(event.start),
+            end: new Date(event.end)
+          }));
+        }
 
-        // Update all state
-        setFarms(importedData.farms);
-        setTasks(importedData.tasks);
-        setIssues(importedData.issues);
-        setCropPlanEvents(processedEvents);
+        // Update all state with proper safety checks
+        if (importedData.farms && Array.isArray(importedData.farms)) {
+          setFarms(importedData.farms);
+        }
+        
+        if (importedData.tasks && Array.isArray(importedData.tasks)) {
+          setTasks(importedData.tasks);
+        }
+        
+        if (importedData.issues && Array.isArray(importedData.issues)) {
+          setIssues(importedData.issues);
+        }
+        
+        if (processedEvents.length > 0) {
+          setCropPlanEvents(processedEvents);
+        }
 
         // Update planner data if available
-        if (importedData.plantingPlans) setPlantingPlans(importedData.plantingPlans);
-        if (importedData.fertilizerPlans) setFertilizerPlans(importedData.fertilizerPlans);
-        if (importedData.pestManagementPlans) setPestManagementPlans(importedData.pestManagementPlans);
+        if (importedData.plantingPlans && Array.isArray(importedData.plantingPlans)) {
+          setPlantingPlans(importedData.plantingPlans);
+        }
+        
+        if (importedData.fertilizerPlans && Array.isArray(importedData.fertilizerPlans)) {
+          setFertilizerPlans(importedData.fertilizerPlans);
+        }
+        
+        if (importedData.pestManagementPlans && Array.isArray(importedData.pestManagementPlans)) {
+          setPestManagementPlans(importedData.pestManagementPlans);
+        }
+        
+        if (importedData.irrigationPlans && Array.isArray(importedData.irrigationPlans)) {
+          setIrrigationPlans(importedData.irrigationPlans);
+        }
+        
+        if (importedData.weatherTaskPlans && Array.isArray(importedData.weatherTaskPlans)) {
+          setWeatherTaskPlans(importedData.weatherTaskPlans);
+        }
+        
+        if (importedData.rotationPlans && Array.isArray(importedData.rotationPlans)) {
+          setRotationPlans(importedData.rotationPlans);
+        }
+        
+        if (importedData.rainwaterPlans && Array.isArray(importedData.rainwaterPlans)) {
+          setRainwaterPlans(importedData.rainwaterPlans);
+        }
+
+        // Import tracker data if available
+        if (importedData.fuelRecords && Array.isArray(importedData.fuelRecords)) {
+          setFuelRecords(importedData.fuelRecords);
+        }
+        
+        if (importedData.soilRecords && Array.isArray(importedData.soilRecords)) {
+          setSoilRecords(importedData.soilRecords);
+        }
+        
+        if (importedData.emissionSources && Array.isArray(importedData.emissionSources)) {
+          setEmissionSources(importedData.emissionSources);
+        }
+        
+        if (importedData.sequestrationActivities && Array.isArray(importedData.sequestrationActivities)) {
+          setSequestrationActivities(importedData.sequestrationActivities);
+        }
+        
+        if (importedData.energyRecords && Array.isArray(importedData.energyRecords)) {
+          setEnergyRecords(importedData.energyRecords);
+        }
 
         setImportNotification({
           success: true,
           message: 'Data imported successfully'
         });
+        
+        console.log('Import successful:', importedData);
       } catch (error) {
+        console.error('Import error:', error);
         setImportNotification({
           success: false,
-          message: 'Error importing file: Invalid format'
+          message: `Error importing file: ${error instanceof Error ? error.message : 'Invalid format'}`
         });
       }
     };
     reader.readAsText(file);
   };
 
-  const sustainabilityMetrics = useMemo<ISustainabilityMetrics | null>(() => calculateSustainabilityMetrics(getFilteredFarms(), weatherData), [farms, weatherData, cropFilter]);
+  const sustainabilityMetrics = useMemo<ISustainabilityMetrics>(
+    () => calculateSustainabilityMetricsWithTrackers(
+      getFilteredFarms(), 
+      weatherData, 
+      soilRecords, 
+      emissionSources, 
+      sequestrationActivities, 
+      energyRecords, 
+      fuelRecords
+    ), 
+    [farms, weatherData, cropFilter, soilRecords, emissionSources, sequestrationActivities, energyRecords, fuelRecords]
+  );
 
   const handleDeleteEvent = (eventId: number) => {
     setConfirmDelete({ id: 0, type: 'cropEvent', eventId });
@@ -1393,6 +1532,7 @@ const DefaultComponent = (): React.ReactNode => {
                 <TabsTrigger data-walkthrough="farms-tab" value="farms">Farms</TabsTrigger>
                 <TabsTrigger data-walkthrough="issues-tab" value="issues">Farm Issues</TabsTrigger>
                 <TabsTrigger data-walkthrough="reports-tab" value="reports">Reports</TabsTrigger>
+                <TabsTrigger value="trackers">Sustainability Trackers</TabsTrigger>
                 <TabsTrigger value="history">History</TabsTrigger>
                 <TabsTrigger data-walkthrough="planners-tab" value="planners">Planners</TabsTrigger>
                 <TabsTrigger value="instructions"><Info className="h-4 w-4 mr-2" />Instructions</TabsTrigger>
@@ -2165,6 +2305,22 @@ const DefaultComponent = (): React.ReactNode => {
                 setIsAddingRotation={setIsAddingRotation} 
                 
                 setConfirmDelete={setConfirmDelete} 
+              />
+            </TabsContent>
+
+            <TabsContent value="trackers">
+              <TrackerDashboard 
+                farms={farms}
+                fuelRecords={fuelRecords} 
+                setFuelRecords={setFuelRecords}
+                soilRecords={soilRecords}
+                setSoilRecords={setSoilRecords}
+                emissionSources={emissionSources}
+                setEmissionSources={setEmissionSources}
+                sequestrationActivities={sequestrationActivities}
+                setSequestrationActivities={setSequestrationActivities}
+                energyRecords={energyRecords}
+                setEnergyRecords={setEnergyRecords}
               />
             </TabsContent>
 

@@ -1,4 +1,11 @@
 import { ReactNode } from 'react';
+import { 
+  FuelRecord, 
+  SoilRecord, 
+  CarbonEmissionSource, 
+  CarbonSequestrationActivity, 
+  EnergyRecord 
+} from './models/sustainability';
 
 export interface WaterUsage {
   amount: number;
@@ -81,6 +88,11 @@ export interface SustainabilityMetrics {
   harvestEfficiency: number;
   soilQualityScore: number;
   rotationScore: number;
+  carbonFootprint?: number;
+  energyEfficiency?: number;
+  fuelEfficiency?: number;
+  renewablePercentage?: number;
+  carbonIntensityPerAcre?: number;
 }
 
 export interface WalkthroughStep {
@@ -108,13 +120,23 @@ export interface ExportData {
   tasks: Task[];
   issues: Issue[];
   cropPlanEvents: CropPlanEvent[];
-  plantingPlans?: PlanItem[];
-  fertilizerPlans?: PlanItem[];
-  pestManagementPlans?: PlanItem[];
+  plantingPlans: PlanItem[];
+  fertilizerPlans: PlanItem[];
+  pestManagementPlans: PlanItem[];
+  irrigationPlans?: PlanItem[];
+  weatherTaskPlans?: PlanItem[];
+  rotationPlans?: PlanItem[];
+  rainwaterPlans?: PlanItem[];
+  // Sustainability tracker data with specific types
+  fuelRecords?: FuelRecord[];
+  soilRecords?: SoilRecord[];
+  emissionSources?: CarbonEmissionSource[];
+  sequestrationActivities?: CarbonSequestrationActivity[];
+  energyRecords?: EnergyRecord[];
 }
 
 export type AnyHistoryEntry = {
-  type: 'Water Usage' | 'Fertilizer Usage' | 'Harvest' | 'Crop Rotation';
+  type: 'Water Usage' | 'Fertilizer Usage' | 'Harvest' | 'Crop Rotation' | 'Soil Health' | 'Fuel Usage' | 'Energy Usage' | 'Carbon Emission' | 'Carbon Sequestration';
   date: Date;
   farm: string;
   amount?: string;
@@ -131,6 +153,13 @@ export type AnyHistoryEntry = {
   };
   crop?: string;
   endDate?: Date;
+  // Sustainability tracker entries
+  soilRecord?: SoilRecord;
+  fuelRecord?: FuelRecord;
+  energyRecord?: EnergyRecord;
+  emissionSource?: CarbonEmissionSource;
+  sequestrationActivity?: CarbonSequestrationActivity;
+  isEditable?: boolean; // Flag to indicate if entry can be edited
 };
 
 export interface PlanItem {

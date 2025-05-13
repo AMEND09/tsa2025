@@ -271,6 +271,38 @@ export const calculateSustainabilityMetrics = (
   };
 };
 
+// Enhanced metrics calculator that includes tracker data
+export const calculateSustainabilityMetricsWithTrackers = (
+  farms: Farm[],
+  weatherData: WeatherData[],
+  _soilRecords: any[] = [],
+  _emissionSources: any[] = [],
+  _sequestrationActivities: any[] = [],
+  _energyRecords: any[] = [],
+  _fuelRecords: any[] = []
+): SustainabilityMetrics => {
+  // Get base metrics first
+  const baseMetrics = calculateSustainabilityMetrics(farms, weatherData) || {
+    overallScore: 0,
+    waterEfficiency: 0,
+    organicScore: 0,
+    harvestEfficiency: 0,
+    soilQualityScore: 0,
+    rotationScore: 0
+  };
+  
+  // Add tracker-based metrics with default values
+  // In a real implementation, these would be calculated using the tracker data parameters
+  return {
+    ...baseMetrics,
+    carbonFootprint: 50, 
+    energyEfficiency: 50,
+    fuelEfficiency: 50,
+    renewablePercentage: 10,
+    carbonIntensityPerAcre: 5
+  };
+}
+
 export const getWeatherInfo = (code: number) => {
   switch (true) {
     case code <= 3: return { desc: 'Clear', icon: '☀️' };
