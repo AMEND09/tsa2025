@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Bar } from 'recharts';
-import { Droplet, Leaf, LayoutDashboard, Info, Trash2, Edit3, RotateCw, Download, Upload, Settings, CloudRain } from 'lucide-react';
+import { Droplet, Leaf, LayoutDashboard, Info, Trash2, Edit3, RotateCw, Download, Upload, Settings, CloudRain, Pencil, X } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 import {
@@ -48,6 +48,7 @@ import RotationPlanForm from './components/RotationPlanForm';
 import RainwaterPlanForm from './components/RainwaterPlanForm';
 import TrackerDashboard from './components/TrackerDashboard';
 import { DataStorage } from '@/services/DataStorage';
+import DraggableWidgetLayout, { Widget } from './components/DraggableWidgetLayout';
 
 const DefaultComponent = (): React.ReactNode => {
   // Define walkthrough steps for the Walkthrough component
@@ -225,6 +226,27 @@ const DefaultComponent = (): React.ReactNode => {
   const [energyRecords, setEnergyRecords] = useState<EnergyRecord[]>(() => {
     return DataStorage.getData<EnergyRecord[]>('energyRecords', []);
   });
+
+  // Add widget layout state with correctly defined widgets
+  const [widgetLayout, setWidgetLayout] = useState<Widget[]>(() => {
+    return DataStorage.getData<Widget[]>('widgetLayout', [
+      { i: 'quickActions', title: 'Quick Actions', isVisible: true, x: 0, y: 0, w: 3, h: 4, minH: 3, minW: 2 },
+      { i: 'sustainabilityScore', title: 'Sustainability Score', isVisible: true, x: 3, y: 0, w: 9, h: 4, minH: 3, minW: 6 },
+      { i: 'weatherPreview', title: 'Weather Preview', isVisible: true, x: 0, y: 4, w: 6, h: 3, minH: 3, minW: 3 },
+      { i: 'upcomingEvents', title: 'Upcoming Events', isVisible: true, x: 6, y: 4, w: 6, h: 3, minH: 3, minW: 3 },
+      { i: 'farmIssues', title: 'Farm Issues', isVisible: true, x: 0, y: 7, w: 6, h: 4, minH: 3, minW: 3 },
+      { i: 'taskManager', title: 'Task Manager', isVisible: true, x: 6, y: 7, w: 6, h: 4, minH: 3, minW: 3 },
+      { i: 'planningRecommendations', title: 'Planning Recommendations', isVisible: true, x: 0, y: 11, w: 12, h: 3, minH: 2, minW: 6 }
+    ]);
+  });
+
+  // Add edit mode state
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  // Add useEffect to save widget layout changes
+  useEffect(() => {
+    DataStorage.setData('widgetLayout', widgetLayout);
+  }, [widgetLayout]);
 
   const [isAddingPlantingPlan, setIsAddingPlantingPlan] = useState(false);
   const [isAddingFertilizerPlan, setIsAddingFertilizerPlan] = useState(false);
@@ -1466,6 +1488,33 @@ const DefaultComponent = (): React.ReactNode => {
     };
   }, [weatherData]);
 
+  const handleWidgetVisibilityChange = (widgetId: string, isVisible: boolean) => {
+    setWidgetLayout((prevLayout: Widget[]) => 
+      prevLayout.map((widget: Widget) => 
+        widget.i === widgetId ? { ...widget, isVisible } : widget
+      )
+    );
+  };
+
+  // Fix the type errors in the layout change function
+  const handleLayoutChange = (layout: any) => {
+    setWidgetLayout((prevLayout: Widget[]) => {
+      return prevLayout.map((widget: Widget) => {
+        const updatedPosition = layout.find((item: any) => item.i === widget.i);
+        if (updatedPosition && widget.isVisible) {
+          return {
+            ...widget,
+            x: updatedPosition.x,
+            y: updatedPosition.y,
+            w: updatedPosition.w,
+            h: updatedPosition.h
+          };
+        }
+        return widget;
+      });
+    });
+  };
+
   return (
     <>
       {/* Using our imported Walkthrough component */}
@@ -1476,8 +1525,24 @@ const DefaultComponent = (): React.ReactNode => {
       />}
       <div className="p-6 max-w-7xl mx-auto bg-white">
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-3xl font-bold">Farm Management Dashboard</h1>
+          <div className="flex justify-between items-center mb-6 pb-6 border-b">
+            <div className="flex items-center gap-4">
+              <img 
+                src="./logo.svg" 
+                alt="Farm Management" 
+                className="h-12 w-12"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.onerror = null; // Avoid infinite loop
+                  target.src = "/logo.svg"; // Try alternative path
+                  console.log("Failed to load logo, trying alternative path");
+                }} 
+              />
+              <div>
+                <h1 className="text-3xl font-bold">EcoSprout</h1>
+                <p className="text-gray-500">Manage your farm operations sustainably</p>
+              </div>
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon">
@@ -1524,406 +1589,474 @@ const DefaultComponent = (): React.ReactNode => {
             </div>
 
             <TabsContent value="overview">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card data-walkthrough="quick-actions">
-                  <CardHeader>
-                    <CardTitle>Quick Actions</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <Dialog open={isAddingWaterUsage} onOpenChange={setIsAddingWaterUsage}>
-                        <DialogTrigger asChild>
-                          <Button className="w-full bg-blue-500 hover:bg-blue-600">
-                            <Droplet className="h-4 w-4 mr-2" />
-                            Record Water Usage
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Record Water Usage</DialogTitle>
-                          </DialogHeader>
-                          <form onSubmit={isEditingWaterUsage ? handleEditWaterUsage : handleAddWaterUsage} className="space-y-4">
-                            <div>
-                              <Label>Farm</Label>
-                              <select 
-                                className="w-full p-2 border rounded"
-                                value={newWaterUsage.farmId}
-                                onChange={(e) => setNewWaterUsage({...newWaterUsage, farmId: e.target.value})}
-                                required
-                              >
-                                <option value="">Select Farm</option>
-                                {farms.map(farm => (
-                                  <option key={farm.id} value={farm.id}>{farm.name}</option>
-                                ))}
-                              </select>
-                            </div>
-                            <div>
-                              <Label>Amount (gallons)</Label>
-                              <Input 
-                                type="number"
-                                value={newWaterUsage.amount}
-                                onChange={(e) => setNewWaterUsage({...newWaterUsage, amount: e.target.value})}
-                                required
-                                className="border rounded px-2 py-1"
-                              />
-                            </div>
-                            <div>
-                              <Label>Date</Label>
-                              <Input 
-                                type="date"
-                                value={newWaterUsage.date}
-                                onChange={(e) => setNewWaterUsage({...newWaterUsage, date: e.target.value})}
-                                required
-                                className="border rounded px-2 py-1"
-                              />
-                            </div>
-                            <Button type="submit" className="w-full">Save Water Usage</Button>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
-
-                      <Dialog open={isAddingFertilizer} onOpenChange={setIsAddingFertilizer}>
-                        <DialogTrigger asChild>
-                          <Button className="w-full bg-green-500 hover:bg-green-600">
-                            <Leaf className="h-4 w-4 mr-2" />
-                            Record Fertilizer Application
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Record Fertilizer Application</DialogTitle>
-                          </DialogHeader>
-                          <form onSubmit={isEditingFertilizer ? handleEditFertilizer : handleAddFertilizer} className="space-y-4">
-                            <div>
-                              <Label>Farm</Label>
-                              <select 
-                                className="w-full p-2 border rounded"
-                                value={newFertilizer.farmId}
-                                onChange={(e) => setNewFertilizer({...newFertilizer, farmId: e.target.value})}
-                                required
-                              >
-                                <option value="">Select Farm</option>
-                                {farms.map(farm => (
-                                  <option key={farm.id} value={farm.id}>{farm.name}</option>
-                                ))}
-                              </select>
-                            </div>
-                            <div>
-                              <Label>Type</Label>
-                              <Input 
-                                value={newFertilizer.type}
-                                onChange={(e) => setNewFertilizer({...newFertilizer, type: e.target.value})}
-                                required
-                                className="border rounded px-2 py-1"
-                              />
-                            </div>
-                            <div>
-                              <Label>Amount (lbs)</Label>
-                              <Input 
-                                type="number"
-                                value={newFertilizer.amount}
-                                onChange={(e) => setNewFertilizer({...newFertilizer, amount: e.target.value})}
-                                required
-                                className="border rounded px-2 py-1"
-                              />
-                            </div>
-                            <div>
-                              <Label>Date</Label>
-                              <Input 
-                                type="date"
-                                value={newFertilizer.date}
-                                onChange={(e) => setNewFertilizer({...newFertilizer, date: e.target.value})}
-                                required
-                                className="border rounded px-2 py-1"
-                              />
-                            </div>
-                            <Button type="submit" className="w-full">Save Fertilizer Application</Button>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
-
-                      <Dialog open={isAddingHarvest} onOpenChange={setIsAddingHarvest}>
-                        <DialogTrigger asChild>
-                          <Button className="w-full bg-purple-500 hover:bg-purple-600">
-                            <LayoutDashboard className="h-4 w-4 mr-2" />
-                            Record Harvest
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Record Harvest</DialogTitle>
-                          </DialogHeader>
-                          <form onSubmit={isEditingHarvest ? handleEditHarvest : handleAddHarvest} className="space-y-4">
-                            <div>
-                              <Label>Farm</Label>
-                              <select 
-                                className="w-full p-2 border rounded"
-                                value={newHarvest.farmId}
-                                onChange={(e) => setNewHarvest({...newHarvest, farmId: e.target.value})}
-                                required
-                              >
-                                <option value="">Select Farm</option>
-                                {farms.map(farm => (
-                                  <option key={farm.id} value={farm.id}>{farm.name}</option>
-                                ))}
-                              </select>
-                            </div>
-                            <div>
-                              <Label>Amount (bushels)</Label>
-                              <Input 
-                                type="number"
-                                value={newHarvest.amount}
-                                onChange={(e) => setNewHarvest({...newHarvest, amount: e.target.value})}
-                                required
-                                className="border rounded px-2 py-1"
-                              />
-                            </div>
-                            <div>
-                              <Label>Date</Label>
-                              <Input 
-                                type="date"
-                                value={newHarvest.date}
-                                onChange={(e) => setNewHarvest({...newHarvest, date: e.target.value})}
-                                required
-                                className="border rounded px-2 py-1"
-                              />
-                            </div>
-                            <Button type="submit" className="w-full">Save Harvest</Button>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
-
-                      <Dialog open={isAddingRotation} onOpenChange={setIsAddingRotation}>
-                        <DialogTrigger asChild>
-                          <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                            <RotateCw className="h-4 w-4 mr-2" />
-                            Record Crop Rotation
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Record Crop Rotation</DialogTitle>
-                          </DialogHeader>
-                          <form onSubmit={handleAddRotation} className="space-y-4">
-                            <div>
-                              <Label>Farm</Label>
-                              <select 
-                                className="w-full p-2 border rounded"
-                                value={newRotation.farmId}
-                                onChange={(e) => setNewRotation({...newRotation, farmId: e.target.value})}
-                                required
-                              >
-                                <option value="">Select Farm</option>
-                                {farms.map(farm => (
-                                  <option key={farm.id} value={farm.id}>{farm.name}</option>
-                                ))}
-                              </select>
-                            </div>
-                            <div>
-                              <Label>Crop</Label>
-                              <Input 
-                                value={newRotation.crop}
-                                onChange={(e) => setNewRotation({...newRotation, crop: e.target.value})}
-                                required
-                                className="border rounded px-2 py-1"
-                              />
-                            </div>
-                            <div>
-                              <Label>Start Date</Label>
-                              <Input 
-                                type="date"
-                                value={newRotation.startDate}
-                                onChange={(e) => setNewRotation({...newRotation, startDate: e.target.value})}
-                                required
-                                className="border rounded px-2 py-1"
-                              />
-                            </div>
-                            <div>
-                              <Label>End Date</Label>
-                              <Input 
-                                type="date"
-                                value={newRotation.endDate}
-                                onChange={(e) => setNewRotation({...newRotation, endDate: e.target.value})}
-                                required
-                                className="border rounded px-2 py-1"
-                              />
-                            </div>
-                            <Button type="submit" className="w-full">Save Crop Rotation</Button>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </CardContent>
-                </Card>
-                {/* Use the imported SustainabilityScoreCard component */}
-                <SustainabilityScoreCard 
-                  sustainabilityMetrics={sustainabilityMetrics} 
-                  cropFilter={cropFilter} 
-                  setCropFilter={setCropFilter}
-                  farms={getFilteredFarms()}
-                />
-                {/* Use the imported WeatherPreview component */}
-                <WeatherPreview weatherData={weatherData} />
-                <UpcomingCropPlan />
-                <FarmIssues />
-                {/* Use the imported TaskManager component */}
-                <TaskManager tasks={tasks} setTasks={setTasks} handleDeleteTask={handleDeleteTask} />
-
-                {/* Planning Recommendations Card - with fixed logic */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Planning Recommendations</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {/* Show weather summary first */}
-                      {weatherData.length > 0 && (
-                        <div className="flex items-center p-2 bg-gray-50 rounded-md mb-2">
-                          <div className="flex-grow">
-                            <p className="font-medium">Weather Summary</p>
-                            <p className="text-xs text-gray-600">
-                              {getPlanningRecommendations.shouldPrepareRainwater 
-                                ? "Rain is expected in the coming days." 
-                                : "Mostly dry conditions expected."}
-                              {" "}Average high: {weatherData.slice(0, 5).reduce((sum, day) => sum + day.temp, 0) / 5}°F
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Only show fertilizer alert if it's actually going to rain */}
-                      {weatherData.length > 0 && getPlanningRecommendations.shouldDelayFertilizer && (
-                        <div className="flex items-center p-2 bg-green-50 rounded-md">
-                          <Leaf className="h-5 w-5 text-green-500 mr-3" />
-                          <div className="flex-grow">
-                            <p className="font-medium">Fertilizer Application Alert</p>
-                            <p className="text-xs text-gray-600">
-                              Rain is forecasted soon. Consider postponing fertilizer application to avoid runoff.
-                            </p>
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="ml-auto text-green-600" 
-                            onClick={() => {
-                              setIsAddingFertilizerPlan(true);
-                            }}
-                          >
-                            Plan
-                          </Button>
-                        </div>
-                      )}
-                      
-                      {/* Only show irrigation if there's NO rain expected */}
-                      {weatherData.length > 0 && getPlanningRecommendations.shouldRecommendIrrigation && (
-                        <div className="flex items-center p-2 bg-blue-50 rounded-md">
-                          <Droplet className="h-5 w-5 text-blue-500 mr-3" />
-                          <div className="flex-grow">
-                            <p className="font-medium">Irrigation Needed</p>
-                            <p className="text-xs text-gray-600">
-                              Hot, dry weather ahead. Consider scheduling irrigation in the next few days.
-                            </p>
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="ml-auto text-blue-600" 
-                            onClick={() => {
-                              setIsAddingIrrigationPlan(true);
-                            }}
-                          >
-                            Plan
-                          </Button>
-                        </div>
-                      )}
-                      
-                      {irrigationPlans.some(plan => plan.status === 'planned') && (
-                        <div className="flex items-center p-2 bg-green-50 rounded-md">
-                          <Droplet className="h-5 w-5 text-green-500 mr-3" />
-                          <div className="flex-grow">
-                            <p className="font-medium">Irrigation Scheduled</p>
-                            <p className="text-xs text-gray-600">
-                              {irrigationPlans.filter(p => p.status === 'planned').length} upcoming irrigation {irrigationPlans.filter(p => p.status === 'planned').length === 1 ? 'plan' : 'plans'}
-                            </p>
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="ml-auto text-green-600" 
-                            onClick={() => {
-                              setActiveTab('planners');
-                            }}
-                          >
-                            View
-                          </Button>
-                        </div>
-                      )}
-                      
-                      {rotationPlans.some(plan => plan.status === 'planned') && (
-                        <div className="flex items-center p-2 bg-orange-50 rounded-md">
-                          <RotateCw className="h-5 w-5 text-orange-500 mr-3" />
-                          <div className="flex-grow">
-                            <p className="font-medium">Crop Rotation Plans</p>
-                            <p className="text-xs text-gray-600">
-                              {rotationPlans.filter(p => p.status === 'planned').length} crop rotation {rotationPlans.filter(p => p.status === 'planned').length === 1 ? 'plan' : 'plans'} awaiting action
-                            </p>
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="ml-auto text-orange-600" 
-                            onClick={() => {
-                              setActiveTab('planners');
-                            }}
-                          >
-                            View
-                          </Button>
-                        </div>
-                      )}
-                      
-                      {/* Only show rainwater harvesting if rain is actually expected */}
-                      {getPlanningRecommendations.shouldPrepareRainwater && (
-                        <div className="flex items-center p-2 bg-cyan-50 rounded-md">
-                          <CloudRain className="h-5 w-5 text-cyan-500 mr-3" />
-                          <div className="flex-grow">
-                            <p className="font-medium">Rainwater Harvesting Opportunity</p>
-                            <p className="text-xs text-gray-600">
-                              Rain is forecasted soon. Consider preparing rainwater harvesting systems.
-                            </p>
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="ml-auto text-cyan-600" 
-                            onClick={() => {
-                              setIsAddingRainwaterPlan(true);
-                            }}
-                          >
-                            Create Plan
-                          </Button>
-                        </div>
-                      )}
-                      
-                      {!getPlanningRecommendations.shouldRecommendIrrigation && 
-                       !getPlanningRecommendations.shouldDelayFertilizer &&
-                       !getPlanningRecommendations.shouldHarvestSoon &&
-                       !getPlanningRecommendations.shouldPrepareRainwater &&
-                       !irrigationPlans.some(plan => plan.status === 'planned') &&
-                       !rotationPlans.some(plan => plan.status === 'planned') &&
-                       !weatherTaskPlans.some(plan => 
-                          plan.status === 'planned' && 
-                          weatherData.some(day => 
-                            day.weather.toLowerCase().includes((plan.weatherCondition || '').toLowerCase())
-                          )
-                        ) && (
-                        <p className="text-center text-gray-500 py-4">
-                          No immediate planning recommendations at this time
-                        </p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+              <div className="mb-4 flex justify-between items-center">
+                <h2 className="text-xl font-semibold">Dashboard Overview</h2>
+                <Button 
+                  variant={isEditMode ? "destructive" : "outline"} 
+                  onClick={() => setIsEditMode(!isEditMode)}
+                  size="icon"
+                  title={isEditMode ? "Exit Edit Mode" : "Customize Dashboard"}
+                >
+                  {isEditMode ? <X className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+                </Button>
               </div>
+
+              <DraggableWidgetLayout 
+                widgets={[
+                  {
+                    ...widgetLayout.find(w => w.i === 'quickActions') || { 
+                      i: 'quickActions', 
+                      title: 'Quick Actions', 
+                      isVisible: true, 
+                      x: 0, y: 0, w: 3, h: 4 
+                    },
+                    content: (
+                      <div className="space-y-2" data-walkthrough="quick-actions">
+                        <Dialog open={isAddingWaterUsage} onOpenChange={setIsAddingWaterUsage}>
+                          <DialogTrigger asChild>
+                            <Button className="w-full bg-blue-500 hover:bg-blue-600">
+                              <Droplet className="h-4 w-4 mr-2" />
+                              Record Water Usage
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Record Water Usage</DialogTitle>
+                            </DialogHeader>
+                            <form onSubmit={isEditingWaterUsage ? handleEditWaterUsage : handleAddWaterUsage} className="space-y-4">
+                              <div>
+                                <Label>Farm</Label>
+                                <select 
+                                  className="w-full p-2 border rounded"
+                                  value={newWaterUsage.farmId}
+                                  onChange={(e) => setNewWaterUsage({...newWaterUsage, farmId: e.target.value})}
+                                  required
+                                >
+                                  <option value="">Select Farm</option>
+                                  {farms.map(farm => (
+                                    <option key={farm.id} value={farm.id}>{farm.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <Label>Amount (gallons)</Label>
+                                <Input 
+                                  type="number"
+                                  value={newWaterUsage.amount}
+                                  onChange={(e) => setNewWaterUsage({...newWaterUsage, amount: e.target.value})}
+                                  required
+                                  className="border rounded px-2 py-1"
+                                />
+                              </div>
+                              <div>
+                                <Label>Date</Label>
+                                <Input 
+                                  type="date"
+                                  value={newWaterUsage.date}
+                                  onChange={(e) => setNewWaterUsage({...newWaterUsage, date: e.target.value})}
+                                  required
+                                  className="border rounded px-2 py-1"
+                                />
+                              </div>
+                              <Button type="submit" className="w-full">Save Water Usage</Button>
+                            </form>
+                          </DialogContent>
+                        </Dialog>
+
+                        <Dialog open={isAddingFertilizer} onOpenChange={setIsAddingFertilizer}>
+                          <DialogTrigger asChild>
+                            <Button className="w-full bg-green-500 hover:bg-green-600">
+                              <Leaf className="h-4 w-4 mr-2" />
+                              Record Fertilizer Application
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Record Fertilizer Application</DialogTitle>
+                            </DialogHeader>
+                            <form onSubmit={isEditingFertilizer ? handleEditFertilizer : handleAddFertilizer} className="space-y-4">
+                              <div>
+                                <Label>Farm</Label>
+                                <select 
+                                  className="w-full p-2 border rounded"
+                                  value={newFertilizer.farmId}
+                                  onChange={(e) => setNewFertilizer({...newFertilizer, farmId: e.target.value})}
+                                  required
+                                >
+                                  <option value="">Select Farm</option>
+                                  {farms.map(farm => (
+                                    <option key={farm.id} value={farm.id}>{farm.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <Label>Type</Label>
+                                <Input 
+                                  value={newFertilizer.type}
+                                  onChange={(e) => setNewFertilizer({...newFertilizer, type: e.target.value})}
+                                  required
+                                  className="border rounded px-2 py-1"
+                                />
+                              </div>
+                              <div>
+                                <Label>Amount (lbs)</Label>
+                                <Input 
+                                  type="number"
+                                  value={newFertilizer.amount}
+                                  onChange={(e) => setNewFertilizer({...newFertilizer, amount: e.target.value})}
+                                  required
+                                  className="border rounded px-2 py-1"
+                                />
+                              </div>
+                              <div>
+                                <Label>Date</Label>
+                                <Input 
+                                  type="date"
+                                  value={newFertilizer.date}
+                                  onChange={(e) => setNewFertilizer({...newFertilizer, date: e.target.value})}
+                                  required
+                                  className="border rounded px-2 py-1"
+                                />
+                              </div>
+                              <Button type="submit" className="w-full">Save Fertilizer Application</Button>
+                            </form>
+                          </DialogContent>
+                        </Dialog>
+
+                        <Dialog open={isAddingHarvest} onOpenChange={setIsAddingHarvest}>
+                          <DialogTrigger asChild>
+                            <Button className="w-full bg-purple-500 hover:bg-purple-600">
+                              <LayoutDashboard className="h-4 w-4 mr-2" />
+                              Record Harvest
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Record Harvest</DialogTitle>
+                            </DialogHeader>
+                            <form onSubmit={isEditingHarvest ? handleEditHarvest : handleAddHarvest} className="space-y-4">
+                              <div>
+                                <Label>Farm</Label>
+                                <select 
+                                  className="w-full p-2 border rounded"
+                                  value={newHarvest.farmId}
+                                  onChange={(e) => setNewHarvest({...newHarvest, farmId: e.target.value})}
+                                  required
+                                >
+                                  <option value="">Select Farm</option>
+                                  {farms.map(farm => (
+                                    <option key={farm.id} value={farm.id}>{farm.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <Label>Amount (bushels)</Label>
+                                <Input 
+                                  type="number"
+                                  value={newHarvest.amount}
+                                  onChange={(e) => setNewHarvest({...newHarvest, amount: e.target.value})}
+                                  required
+                                  className="border rounded px-2 py-1"
+                                />
+                              </div>
+                              <div>
+                                <Label>Date</Label>
+                                <Input 
+                                  type="date"
+                                  value={newHarvest.date}
+                                  onChange={(e) => setNewHarvest({...newHarvest, date: e.target.value})}
+                                  required
+                                  className="border rounded px-2 py-1"
+                                />
+                              </div>
+                              <Button type="submit" className="w-full">Save Harvest</Button>
+                            </form>
+                          </DialogContent>
+                        </Dialog>
+
+                        <Dialog open={isAddingRotation} onOpenChange={setIsAddingRotation}>
+                          <DialogTrigger asChild>
+                            <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                              <RotateCw className="h-4 w-4 mr-2" />
+                              Record Crop Rotation
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Record Crop Rotation</DialogTitle>
+                            </DialogHeader>
+                            <form onSubmit={handleAddRotation} className="space-y-4">
+                              <div>
+                                <Label>Farm</Label>
+                                <select 
+                                  className="w-full p-2 border rounded"
+                                  value={newRotation.farmId}
+                                  onChange={(e) => setNewRotation({...newRotation, farmId: e.target.value})}
+                                  required
+                                >
+                                  <option value="">Select Farm</option>
+                                  {farms.map(farm => (
+                                    <option key={farm.id} value={farm.id}>{farm.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <Label>Crop</Label>
+                                <Input 
+                                  value={newRotation.crop}
+                                  onChange={(e) => setNewRotation({...newRotation, crop: e.target.value})}
+                                  required
+                                  className="border rounded px-2 py-1"
+                                />
+                              </div>
+                              <div>
+                                <Label>Start Date</Label>
+                                <Input 
+                                  type="date"
+                                  value={newRotation.startDate}
+                                  onChange={(e) => setNewRotation({...newRotation, startDate: e.target.value})}
+                                  required
+                                  className="border rounded px-2 py-1"
+                                />
+                              </div>
+                              <div>
+                                <Label>End Date</Label>
+                                <Input 
+                                  type="date"
+                                  value={newRotation.endDate}
+                                  onChange={(e) => setNewRotation({...newRotation, endDate: e.target.value})}
+                                  required
+                                  className="border rounded px-2 py-1"
+                                />
+                              </div>
+                              <Button type="submit" className="w-full">Save Crop Rotation</Button>
+                            </form>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    )
+                  },
+                  {
+                    ...widgetLayout.find(w => w.i === 'sustainabilityScore') || { 
+                      i: 'sustainabilityScore', 
+                      title: 'Sustainability Score', 
+                      isVisible: true, 
+                      x: 3, y: 0, w: 9, h: 4 
+                    },
+                    content: (
+                      <div data-walkthrough="sustainability">
+                        <SustainabilityScoreCard 
+                          sustainabilityMetrics={sustainabilityMetrics} 
+                          cropFilter={cropFilter} 
+                          setCropFilter={setCropFilter}
+                          farms={getFilteredFarms()}
+                        />
+                      </div>
+                    )
+                  },
+                  {
+                    ...widgetLayout.find(w => w.i === 'weatherPreview') || { 
+                      i: 'weatherPreview', 
+                      title: 'Weather Preview', 
+                      isVisible: true, 
+                      x: 0, y: 4, w: 6, h: 3 
+                    },
+                    content: <WeatherPreview weatherData={weatherData} />
+                  },
+                  {
+                    ...widgetLayout.find(w => w.i === 'upcomingEvents') || { 
+                      i: 'upcomingEvents', 
+                      title: 'Upcoming Events', 
+                      isVisible: true, 
+                      x: 6, y: 4, w: 6, h: 3 
+                    },
+                    content: <UpcomingCropPlan />
+                  },
+                  {
+                    ...widgetLayout.find(w => w.i === 'farmIssues') || { 
+                      i: 'farmIssues', 
+                      title: 'Farm Issues', 
+                      isVisible: true, 
+                      x: 0, y: 7, w: 6, h: 4 
+                    },
+                    content: <FarmIssues />
+                  },
+                  {
+                    ...widgetLayout.find(w => w.i === 'taskManager') || { 
+                      i: 'taskManager', 
+                      title: 'Task Manager', 
+                      isVisible: true, 
+                      x: 6, y: 7, w: 6, h: 4 
+                    },
+                    content: (
+                      <TaskManager 
+                        tasks={tasks} 
+                        setTasks={setTasks} 
+                        handleDeleteTask={handleDeleteTask}
+                      />
+                    )
+                  },
+                  {
+                    ...widgetLayout.find(w => w.i === 'planningRecommendations') || { 
+                      i: 'planningRecommendations', 
+                      title: 'Planning Recommendations', 
+                      isVisible: true, 
+                      x: 0, y: 11, w: 12, h: 3 
+                    },
+                    content: (
+                      <div className="space-y-3">
+                        {/* Show weather summary first */}
+                        {weatherData.length > 0 && (
+                          <div className="flex items-center p-2 bg-gray-50 rounded-md mb-2">
+                            <div className="flex-grow">
+                              <p className="font-medium">Weather Summary</p>
+                              <p className="text-xs text-gray-600">
+                                {getPlanningRecommendations.shouldPrepareRainwater 
+                                  ? "Rain is expected in the coming days." 
+                                  : "Mostly dry conditions expected."}
+                                {" "}Average high: {weatherData.slice(0, 5).reduce((sum, day) => sum + day.temp, 0) / 5}°F
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Only show fertilizer alert if it's actually going to rain */}
+                        {weatherData.length > 0 && getPlanningRecommendations.shouldDelayFertilizer && (
+                          <div className="flex items-center p-2 bg-green-50 rounded-md">
+                            <Leaf className="h-5 w-5 text-green-500 mr-3" />
+                            <div className="flex-grow">
+                              <p className="font-medium">Fertilizer Application Alert</p>
+                              <p className="text-xs text-gray-600">
+                                Rain is forecasted soon. Consider postponing fertilizer application to avoid runoff.
+                              </p>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="ml-auto text-green-600" 
+                              onClick={() => {
+                                setIsAddingFertilizerPlan(true);
+                              }}
+                            >
+                              Plan
+                            </Button>
+                          </div>
+                        )}
+                        
+                        {/* Only show irrigation if there's NO rain expected */}
+                        {weatherData.length > 0 && getPlanningRecommendations.shouldRecommendIrrigation && (
+                          <div className="flex items-center p-2 bg-blue-50 rounded-md">
+                            <Droplet className="h-5 w-5 text-blue-500 mr-3" />
+                            <div className="flex-grow">
+                              <p className="font-medium">Irrigation Needed</p>
+                              <p className="text-xs text-gray-600">
+                                Hot, dry weather ahead. Consider scheduling irrigation in the next few days.
+                              </p>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="ml-auto text-blue-600" 
+                              onClick={() => {
+                                setIsAddingIrrigationPlan(true);
+                              }}
+                            >
+                              Plan
+                            </Button>
+                          </div>
+                        )}
+                        
+                        {irrigationPlans.some(plan => plan.status === 'planned') && (
+                          <div className="flex items-center p-2 bg-green-50 rounded-md">
+                            <Droplet className="h-5 w-5 text-green-500 mr-3" />
+                            <div className="flex-grow">
+                              <p className="font-medium">Irrigation Scheduled</p>
+                              <p className="text-xs text-gray-600">
+                                {irrigationPlans.filter(p => p.status === 'planned').length} upcoming irrigation {irrigationPlans.filter(p => p.status === 'planned').length === 1 ? 'plan' : 'plans'}
+                              </p>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="ml-auto text-green-600" 
+                              onClick={() => {
+                                setActiveTab('planners');
+                              }}
+                            >
+                              View
+                            </Button>
+                          </div>
+                        )}
+                        
+                        {rotationPlans.some(plan => plan.status === 'planned') && (
+                          <div className="flex items-center p-2 bg-orange-50 rounded-md">
+                            <RotateCw className="h-5 w-5 text-orange-500 mr-3" />
+                            <div className="flex-grow">
+                              <p className="font-medium">Crop Rotation Plans</p>
+                              <p className="text-xs text-gray-600">
+                                {rotationPlans.filter(p => p.status === 'planned').length} crop rotation {rotationPlans.filter(p => p.status === 'planned').length === 1 ? 'plan' : 'plans'} awaiting action
+                              </p>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="ml-auto text-orange-600" 
+                              onClick={() => {
+                                setActiveTab('planners');
+                              }}
+                            >
+                              View
+                            </Button>
+                          </div>
+                        )}
+                        
+                        {/* Only show rainwater harvesting if rain is actually expected */}
+                        {getPlanningRecommendations.shouldPrepareRainwater && (
+                          <div className="flex items-center p-2 bg-cyan-50 rounded-md">
+                            <CloudRain className="h-5 w-5 text-cyan-500 mr-3" />
+                            <div className="flex-grow">
+                              <p className="font-medium">Rainwater Harvesting Opportunity</p>
+                              <p className="text-xs text-gray-600">
+                                Rain is forecasted soon. Consider preparing rainwater harvesting systems.
+                              </p>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="ml-auto text-cyan-600" 
+                              onClick={() => {
+                                setIsAddingRainwaterPlan(true);
+                              }}
+                            >
+                              Create Plan
+                            </Button>
+                          </div>
+                        )}
+                        
+                        {!getPlanningRecommendations.shouldRecommendIrrigation && 
+                         !getPlanningRecommendations.shouldDelayFertilizer &&
+                         !getPlanningRecommendations.shouldHarvestSoon &&
+                         !getPlanningRecommendations.shouldPrepareRainwater &&
+                         !irrigationPlans.some(plan => plan.status === 'planned') &&
+                         !rotationPlans.some(plan => plan.status === 'planned') &&
+                         !weatherTaskPlans.some(plan => 
+                            plan.status === 'planned' && 
+                            weatherData.some(day => 
+                              day.weather.toLowerCase().includes((plan.weatherCondition || '').toLowerCase())
+                            )
+                          ) && (
+                          <p className="text-center text-gray-500 py-4">
+                            No immediate planning recommendations at this time
+                          </p>
+                        )}
+                      </div>
+                    )
+                  }
+                ]}
+                onWidgetVisibilityChange={handleWidgetVisibilityChange}
+                onLayoutChange={handleLayoutChange}
+                isEditMode={isEditMode}
+              />
             </TabsContent>
 
             <TabsContent value="issues">
