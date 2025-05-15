@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Bar } from 'recharts';
-import { Droplet, Leaf, LayoutDashboard, Info, Trash2, Edit3, RotateCw, Download, Upload, Settings, CloudRain, Pencil, X } from 'lucide-react';
+import { Droplet, Leaf, LayoutDashboard, Info, Trash2, Edit3, RotateCw, Download, Upload, Settings, CloudRain, Pencil, X, UserCircle, LogIn, LogOut } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 import {
@@ -49,6 +49,15 @@ import RainwaterPlanForm from './components/RainwaterPlanForm';
 import TrackerDashboard from './components/TrackerDashboard';
 import { DataStorage } from '@/services/DataStorage';
 import DraggableWidgetLayout, { Widget } from './components/DraggableWidgetLayout';
+import LoginPage from './components/LoginPage';
+import UserProfileSettings from '@/artifacts/components/UserProfileSettings';
+
+interface UserData {
+  username: string;
+  email: string;
+  name: string;
+  role: string;
+}
 
 const DefaultComponent = (): React.ReactNode => {
   // Define walkthrough steps for the Walkthrough component
@@ -418,6 +427,87 @@ const DefaultComponent = (): React.ReactNode => {
     notes: ''
   });
 
+  // Update user auth state with proper typing
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return DataStorage.getData<boolean>('isLoggedIn', false);
+  });
+  
+  const [currentUser, setCurrentUser] = useState<UserData | null>(() => {
+    return DataStorage.getData<UserData | null>('currentUser', null);
+  });
+  
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showProfileSettings, setShowProfileSettings] = useState(false);
+
+  // Handle user login
+  const handleLogin = (userData: { username: string; password: string }) => {
+    // In a real app, this would validate against a backend
+    // For this demo, just accept any login
+    const newUser: UserData = {
+      username: userData.username,
+      email: `${userData.username}@example.com`,
+      name: userData.username,
+      role: 'Farmer'
+    };
+    
+    DataStorage.setData('currentUser', newUser);
+    DataStorage.setData('isLoggedIn', true);
+    setCurrentUser(newUser);
+    setIsLoggedIn(true);
+    setShowLoginModal(false);
+  };
+
+  // Handle user registration
+  const handleRegister = (userData: { 
+    username: string; 
+    password: string;
+    email: string;
+    name: string; 
+  }) => {
+    // In a real app, this would send data to a backend
+    // For this demo, just create a new user
+    const newUser: UserData = {
+      username: userData.username,
+      email: userData.email,
+      name: userData.name,
+      role: 'Farmer'
+    };
+    
+    DataStorage.setData('currentUser', newUser);
+    DataStorage.setData('isLoggedIn', true);
+    setCurrentUser(newUser);
+    setIsLoggedIn(true);
+    setShowLoginModal(false);
+  };
+
+  // Handle user logout
+  const handleLogout = () => {
+    DataStorage.setData('isLoggedIn', false);
+    DataStorage.removeData('currentUser');
+    setIsLoggedIn(false);
+    setCurrentUser(null);
+  };
+
+  // Handle profile update
+  const handleProfileUpdate = (userData: {
+    name: string;
+    email: string;
+    role: string;
+  }) => {
+    if (!currentUser) return;
+    
+    const updatedUser = {
+      ...currentUser,
+      name: userData.name,
+      email: userData.email,
+      role: userData.role
+    };
+    
+    DataStorage.setData('currentUser', updatedUser);
+    setCurrentUser(updatedUser);
+    setShowProfileSettings(false);
+  };
+  
   const getFilteredFarms = () => {
     if (cropFilter === "all") return farms;
     return farms.filter(farm => farm.crop === cropFilter);
@@ -1517,936 +1607,1001 @@ const DefaultComponent = (): React.ReactNode => {
 
   return (
     <>
+      {!isLoggedIn && (
+        <LoginPage 
+          isOpen={showLoginModal} 
+          onOpenChange={setShowLoginModal} 
+          onLogin={handleLogin}
+          onRegister={handleRegister}
+        />
+      )}
+      
+      {isLoggedIn && currentUser && (
+        <UserProfileSettings
+          isOpen={showProfileSettings}
+          onOpenChange={setShowProfileSettings}
+          userData={currentUser}
+          onUpdate={handleProfileUpdate}
+        />
+      )}
+      
       {/* Using our imported Walkthrough component */}
       {showWalkthrough && <Walkthrough 
         onComplete={handleWalkthroughComplete} 
         setActiveTab={setActiveTab} 
         WALKTHROUGH_STEPS={WALKTHROUGH_STEPS}
       />}
-      <div className="p-6 max-w-7xl mx-auto bg-white">
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-6 pb-6 border-b">
-            <div className="flex items-center gap-4">
-              <img 
-                src="./logo.svg" 
-                alt="Farm Management" 
-                className="h-12 w-12"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.onerror = null; // Avoid infinite loop
-                  target.src = "/logo.svg"; // Try alternative path
-                  console.log("Failed to load logo, trying alternative path");
-                }} 
-              />
-              <div>
-                <h1 className="text-3xl font-bold">EcoSprout</h1>
-                <p className="text-gray-500">Manage your farm operations sustainably</p>
-              </div>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={handleExportData}>
-                  <Download className="mr-2 h-4 w-4" />
-                  <span>Export Data</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => document.getElementById('importDataFile')?.click()}>
-                  <Upload className="mr-2 h-4 w-4" />
-                  <span>Import Data</span>
-                  <input
-                    type="file"
-                    id="importDataFile"
-                    className="hidden"
-                    accept=".json"
-                    onChange={handleImportData}
-                  />
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleStartWalkthrough}>
-                  <Info className="mr-2 h-4 w-4" />
-                  <span>Start Tutorial</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          <Tabs defaultValue="overview" className="space-y-4" value={activeTab} onValueChange={setActiveTab}>
-            <div className="flex justify-between items-center">
-              <TabsList className="hidden md:flex">
-                <TabsTrigger data-walkthrough="overview-tab" value="overview">Overview</TabsTrigger>
-                <TabsTrigger data-walkthrough="water-tab" value="water">Water Management</TabsTrigger>
-                <TabsTrigger data-walkthrough="farms-tab" value="farms">Farms</TabsTrigger>
-                <TabsTrigger data-walkthrough="issues-tab" value="issues">Farm Issues</TabsTrigger>
-                <TabsTrigger data-walkthrough="reports-tab" value="reports">Reports</TabsTrigger>
-                <TabsTrigger value="trackers">Sustainability Trackers</TabsTrigger>
-                <TabsTrigger value="history">History</TabsTrigger>
-                <TabsTrigger data-walkthrough="planners-tab" value="planners">Planners</TabsTrigger>
-                <TabsTrigger value="instructions"><Info className="h-4 w-4 mr-2" />Instructions</TabsTrigger>
-              </TabsList>
-            </div>
-
-            <TabsContent value="overview">
-              <div className="mb-4 flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Dashboard Overview</h2>
-                <Button 
-                  variant={isEditMode ? "destructive" : "outline"} 
-                  onClick={() => setIsEditMode(!isEditMode)}
-                  size="icon"
-                  title={isEditMode ? "Exit Edit Mode" : "Customize Dashboard"}
-                >
-                  {isEditMode ? <X className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
-                </Button>
-              </div>
-
-              <DraggableWidgetLayout 
-                widgets={[
-                  {
-                    ...widgetLayout.find(w => w.i === 'quickActions') || { 
-                      i: 'quickActions', 
-                      title: 'Quick Actions', 
-                      isVisible: true, 
-                      x: 0, y: 0, w: 3, h: 4 
-                    },
-                    content: (
-                      <div className="space-y-2" data-walkthrough="quick-actions">
-                        <Dialog open={isAddingWaterUsage} onOpenChange={setIsAddingWaterUsage}>
-                          <DialogTrigger asChild>
-                            <Button className="w-full bg-blue-500 hover:bg-blue-600">
-                              <Droplet className="h-4 w-4 mr-2" />
-                              Record Water Usage
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Record Water Usage</DialogTitle>
-                            </DialogHeader>
-                            <form onSubmit={isEditingWaterUsage ? handleEditWaterUsage : handleAddWaterUsage} className="space-y-4">
-                              <div>
-                                <Label>Farm</Label>
-                                <select 
-                                  className="w-full p-2 border rounded"
-                                  value={newWaterUsage.farmId}
-                                  onChange={(e) => setNewWaterUsage({...newWaterUsage, farmId: e.target.value})}
-                                  required
-                                >
-                                  <option value="">Select Farm</option>
-                                  {farms.map(farm => (
-                                    <option key={farm.id} value={farm.id}>{farm.name}</option>
-                                  ))}
-                                </select>
-                              </div>
-                              <div>
-                                <Label>Amount (gallons)</Label>
-                                <Input 
-                                  type="number"
-                                  value={newWaterUsage.amount}
-                                  onChange={(e) => setNewWaterUsage({...newWaterUsage, amount: e.target.value})}
-                                  required
-                                  className="border rounded px-2 py-1"
-                                />
-                              </div>
-                              <div>
-                                <Label>Date</Label>
-                                <Input 
-                                  type="date"
-                                  value={newWaterUsage.date}
-                                  onChange={(e) => setNewWaterUsage({...newWaterUsage, date: e.target.value})}
-                                  required
-                                  className="border rounded px-2 py-1"
-                                />
-                              </div>
-                              <Button type="submit" className="w-full">Save Water Usage</Button>
-                            </form>
-                          </DialogContent>
-                        </Dialog>
-
-                        <Dialog open={isAddingFertilizer} onOpenChange={setIsAddingFertilizer}>
-                          <DialogTrigger asChild>
-                            <Button className="w-full bg-green-500 hover:bg-green-600">
-                              <Leaf className="h-4 w-4 mr-2" />
-                              Record Fertilizer Application
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Record Fertilizer Application</DialogTitle>
-                            </DialogHeader>
-                            <form onSubmit={isEditingFertilizer ? handleEditFertilizer : handleAddFertilizer} className="space-y-4">
-                              <div>
-                                <Label>Farm</Label>
-                                <select 
-                                  className="w-full p-2 border rounded"
-                                  value={newFertilizer.farmId}
-                                  onChange={(e) => setNewFertilizer({...newFertilizer, farmId: e.target.value})}
-                                  required
-                                >
-                                  <option value="">Select Farm</option>
-                                  {farms.map(farm => (
-                                    <option key={farm.id} value={farm.id}>{farm.name}</option>
-                                  ))}
-                                </select>
-                              </div>
-                              <div>
-                                <Label>Type</Label>
-                                <Input 
-                                  value={newFertilizer.type}
-                                  onChange={(e) => setNewFertilizer({...newFertilizer, type: e.target.value})}
-                                  required
-                                  className="border rounded px-2 py-1"
-                                />
-                              </div>
-                              <div>
-                                <Label>Amount (lbs)</Label>
-                                <Input 
-                                  type="number"
-                                  value={newFertilizer.amount}
-                                  onChange={(e) => setNewFertilizer({...newFertilizer, amount: e.target.value})}
-                                  required
-                                  className="border rounded px-2 py-1"
-                                />
-                              </div>
-                              <div>
-                                <Label>Date</Label>
-                                <Input 
-                                  type="date"
-                                  value={newFertilizer.date}
-                                  onChange={(e) => setNewFertilizer({...newFertilizer, date: e.target.value})}
-                                  required
-                                  className="border rounded px-2 py-1"
-                                />
-                              </div>
-                              <Button type="submit" className="w-full">Save Fertilizer Application</Button>
-                            </form>
-                          </DialogContent>
-                        </Dialog>
-
-                        <Dialog open={isAddingHarvest} onOpenChange={setIsAddingHarvest}>
-                          <DialogTrigger asChild>
-                            <Button className="w-full bg-purple-500 hover:bg-purple-600">
-                              <LayoutDashboard className="h-4 w-4 mr-2" />
-                              Record Harvest
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Record Harvest</DialogTitle>
-                            </DialogHeader>
-                            <form onSubmit={isEditingHarvest ? handleEditHarvest : handleAddHarvest} className="space-y-4">
-                              <div>
-                                <Label>Farm</Label>
-                                <select 
-                                  className="w-full p-2 border rounded"
-                                  value={newHarvest.farmId}
-                                  onChange={(e) => setNewHarvest({...newHarvest, farmId: e.target.value})}
-                                  required
-                                >
-                                  <option value="">Select Farm</option>
-                                  {farms.map(farm => (
-                                    <option key={farm.id} value={farm.id}>{farm.name}</option>
-                                  ))}
-                                </select>
-                              </div>
-                              <div>
-                                <Label>Amount (bushels)</Label>
-                                <Input 
-                                  type="number"
-                                  value={newHarvest.amount}
-                                  onChange={(e) => setNewHarvest({...newHarvest, amount: e.target.value})}
-                                  required
-                                  className="border rounded px-2 py-1"
-                                />
-                              </div>
-                              <div>
-                                <Label>Date</Label>
-                                <Input 
-                                  type="date"
-                                  value={newHarvest.date}
-                                  onChange={(e) => setNewHarvest({...newHarvest, date: e.target.value})}
-                                  required
-                                  className="border rounded px-2 py-1"
-                                />
-                              </div>
-                              <Button type="submit" className="w-full">Save Harvest</Button>
-                            </form>
-                          </DialogContent>
-                        </Dialog>
-
-                        <Dialog open={isAddingRotation} onOpenChange={setIsAddingRotation}>
-                          <DialogTrigger asChild>
-                            <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                              <RotateCw className="h-4 w-4 mr-2" />
-                              Record Crop Rotation
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Record Crop Rotation</DialogTitle>
-                            </DialogHeader>
-                            <form onSubmit={handleAddRotation} className="space-y-4">
-                              <div>
-                                <Label>Farm</Label>
-                                <select 
-                                  className="w-full p-2 border rounded"
-                                  value={newRotation.farmId}
-                                  onChange={(e) => setNewRotation({...newRotation, farmId: e.target.value})}
-                                  required
-                                >
-                                  <option value="">Select Farm</option>
-                                  {farms.map(farm => (
-                                    <option key={farm.id} value={farm.id}>{farm.name}</option>
-                                  ))}
-                                </select>
-                              </div>
-                              <div>
-                                <Label>Crop</Label>
-                                <Input 
-                                  value={newRotation.crop}
-                                  onChange={(e) => setNewRotation({...newRotation, crop: e.target.value})}
-                                  required
-                                  className="border rounded px-2 py-1"
-                                />
-                              </div>
-                              <div>
-                                <Label>Start Date</Label>
-                                <Input 
-                                  type="date"
-                                  value={newRotation.startDate}
-                                  onChange={(e) => setNewRotation({...newRotation, startDate: e.target.value})}
-                                  required
-                                  className="border rounded px-2 py-1"
-                                />
-                              </div>
-                              <div>
-                                <Label>End Date</Label>
-                                <Input 
-                                  type="date"
-                                  value={newRotation.endDate}
-                                  onChange={(e) => setNewRotation({...newRotation, endDate: e.target.value})}
-                                  required
-                                  className="border rounded px-2 py-1"
-                                />
-                              </div>
-                              <Button type="submit" className="w-full">Save Crop Rotation</Button>
-                            </form>
-                          </DialogContent>
-                        </Dialog>
-                      </div>
-                    )
-                  },
-                  {
-                    ...widgetLayout.find(w => w.i === 'sustainabilityScore') || { 
-                      i: 'sustainabilityScore', 
-                      title: 'Sustainability Score', 
-                      isVisible: true, 
-                      x: 3, y: 0, w: 9, h: 4 
-                    },
-                    content: (
-                      <div data-walkthrough="sustainability">
-                        <SustainabilityScoreCard 
-                          sustainabilityMetrics={sustainabilityMetrics} 
-                          cropFilter={cropFilter} 
-                          setCropFilter={setCropFilter}
-                          farms={getFilteredFarms()}
-                        />
-                      </div>
-                    )
-                  },
-                  {
-                    ...widgetLayout.find(w => w.i === 'weatherPreview') || { 
-                      i: 'weatherPreview', 
-                      title: 'Weather Preview', 
-                      isVisible: true, 
-                      x: 0, y: 4, w: 6, h: 3 
-                    },
-                    content: <WeatherPreview weatherData={weatherData} />
-                  },
-                  {
-                    ...widgetLayout.find(w => w.i === 'upcomingEvents') || { 
-                      i: 'upcomingEvents', 
-                      title: 'Upcoming Events', 
-                      isVisible: true, 
-                      x: 6, y: 4, w: 6, h: 3 
-                    },
-                    content: <UpcomingCropPlan />
-                  },
-                  {
-                    ...widgetLayout.find(w => w.i === 'farmIssues') || { 
-                      i: 'farmIssues', 
-                      title: 'Farm Issues', 
-                      isVisible: true, 
-                      x: 0, y: 7, w: 6, h: 4 
-                    },
-                    content: <FarmIssues />
-                  },
-                  {
-                    ...widgetLayout.find(w => w.i === 'taskManager') || { 
-                      i: 'taskManager', 
-                      title: 'Task Manager', 
-                      isVisible: true, 
-                      x: 6, y: 7, w: 6, h: 4 
-                    },
-                    content: (
-                      <TaskManager 
-                        tasks={tasks} 
-                        setTasks={setTasks} 
-                        handleDeleteTask={handleDeleteTask}
-                      />
-                    )
-                  },
-                  {
-                    ...widgetLayout.find(w => w.i === 'planningRecommendations') || { 
-                      i: 'planningRecommendations', 
-                      title: 'Planning Recommendations', 
-                      isVisible: true, 
-                      x: 0, y: 11, w: 12, h: 3 
-                    },
-                    content: (
-                      <div className="space-y-3">
-                        {/* Show weather summary first */}
-                        {weatherData.length > 0 && (
-                          <div className="flex items-center p-2 bg-gray-50 rounded-md mb-2">
-                            <div className="flex-grow">
-                              <p className="font-medium">Weather Summary</p>
-                              <p className="text-xs text-gray-600">
-                                {getPlanningRecommendations.shouldPrepareRainwater 
-                                  ? "Rain is expected in the coming days." 
-                                  : "Mostly dry conditions expected."}
-                                {" "}Average high: {weatherData.slice(0, 5).reduce((sum, day) => sum + day.temp, 0) / 5}°F
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Only show fertilizer alert if it's actually going to rain */}
-                        {weatherData.length > 0 && getPlanningRecommendations.shouldDelayFertilizer && (
-                          <div className="flex items-center p-2 bg-green-50 rounded-md">
-                            <Leaf className="h-5 w-5 text-green-500 mr-3" />
-                            <div className="flex-grow">
-                              <p className="font-medium">Fertilizer Application Alert</p>
-                              <p className="text-xs text-gray-600">
-                                Rain is forecasted soon. Consider postponing fertilizer application to avoid runoff.
-                              </p>
-                            </div>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="ml-auto text-green-600" 
-                              onClick={() => {
-                                setIsAddingFertilizerPlan(true);
-                              }}
-                            >
-                              Plan
-                            </Button>
-                          </div>
-                        )}
-                        
-                        {/* Only show irrigation if there's NO rain expected */}
-                        {weatherData.length > 0 && getPlanningRecommendations.shouldRecommendIrrigation && (
-                          <div className="flex items-center p-2 bg-blue-50 rounded-md">
-                            <Droplet className="h-5 w-5 text-blue-500 mr-3" />
-                            <div className="flex-grow">
-                              <p className="font-medium">Irrigation Needed</p>
-                              <p className="text-xs text-gray-600">
-                                Hot, dry weather ahead. Consider scheduling irrigation in the next few days.
-                              </p>
-                            </div>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="ml-auto text-blue-600" 
-                              onClick={() => {
-                                setIsAddingIrrigationPlan(true);
-                              }}
-                            >
-                              Plan
-                            </Button>
-                          </div>
-                        )}
-                        
-                        {irrigationPlans.some(plan => plan.status === 'planned') && (
-                          <div className="flex items-center p-2 bg-green-50 rounded-md">
-                            <Droplet className="h-5 w-5 text-green-500 mr-3" />
-                            <div className="flex-grow">
-                              <p className="font-medium">Irrigation Scheduled</p>
-                              <p className="text-xs text-gray-600">
-                                {irrigationPlans.filter(p => p.status === 'planned').length} upcoming irrigation {irrigationPlans.filter(p => p.status === 'planned').length === 1 ? 'plan' : 'plans'}
-                              </p>
-                            </div>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="ml-auto text-green-600" 
-                              onClick={() => {
-                                setActiveTab('planners');
-                              }}
-                            >
-                              View
-                            </Button>
-                          </div>
-                        )}
-                        
-                        {rotationPlans.some(plan => plan.status === 'planned') && (
-                          <div className="flex items-center p-2 bg-orange-50 rounded-md">
-                            <RotateCw className="h-5 w-5 text-orange-500 mr-3" />
-                            <div className="flex-grow">
-                              <p className="font-medium">Crop Rotation Plans</p>
-                              <p className="text-xs text-gray-600">
-                                {rotationPlans.filter(p => p.status === 'planned').length} crop rotation {rotationPlans.filter(p => p.status === 'planned').length === 1 ? 'plan' : 'plans'} awaiting action
-                              </p>
-                            </div>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="ml-auto text-orange-600" 
-                              onClick={() => {
-                                setActiveTab('planners');
-                              }}
-                            >
-                              View
-                            </Button>
-                          </div>
-                        )}
-                        
-                        {/* Only show rainwater harvesting if rain is actually expected */}
-                        {getPlanningRecommendations.shouldPrepareRainwater && (
-                          <div className="flex items-center p-2 bg-cyan-50 rounded-md">
-                            <CloudRain className="h-5 w-5 text-cyan-500 mr-3" />
-                            <div className="flex-grow">
-                              <p className="font-medium">Rainwater Harvesting Opportunity</p>
-                              <p className="text-xs text-gray-600">
-                                Rain is forecasted soon. Consider preparing rainwater harvesting systems.
-                              </p>
-                            </div>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="ml-auto text-cyan-600" 
-                              onClick={() => {
-                                setIsAddingRainwaterPlan(true);
-                              }}
-                            >
-                              Create Plan
-                            </Button>
-                          </div>
-                        )}
-                        
-                        {!getPlanningRecommendations.shouldRecommendIrrigation && 
-                         !getPlanningRecommendations.shouldDelayFertilizer &&
-                         !getPlanningRecommendations.shouldHarvestSoon &&
-                         !getPlanningRecommendations.shouldPrepareRainwater &&
-                         !irrigationPlans.some(plan => plan.status === 'planned') &&
-                         !rotationPlans.some(plan => plan.status === 'planned') &&
-                         !weatherTaskPlans.some(plan => 
-                            plan.status === 'planned' && 
-                            weatherData.some(day => 
-                              day.weather.toLowerCase().includes((plan.weatherCondition || '').toLowerCase())
-                            )
-                          ) && (
-                          <p className="text-center text-gray-500 py-4">
-                            No immediate planning recommendations at this time
-                          </p>
-                        )}
-                      </div>
-                    )
-                  }
-                ]}
-                onWidgetVisibilityChange={handleWidgetVisibilityChange}
-                onLayoutChange={handleLayoutChange}
-                isEditMode={isEditMode}
-              />
-            </TabsContent>
-
-            <TabsContent value="issues">
-              {/* Use the imported IssueTracker component with props */}
-              <IssueTracker 
-                issues={issues} 
-                setIssues={setIssues} 
-                handleResolveIssue={handleResolveIssue}
-              />
-            </TabsContent>
-
-            <TabsContent value="water">
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Water Usage Tracker</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[300px]">
-                      {farms.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={farms.flatMap(farm => 
-                            farm.waterHistory.map(usage => ({
-                              farm: farm.name,
-                              amount: usage.amount,
-                              date: new Date(usage.date).toLocaleDateString()
-                            }))
-                          )}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="date" />
-                            <YAxis />
-                            <Tooltip />
-                            <Legend />
-                            <Bar dataKey="amount" fill="#3b82f6" name="Water Usage (gal)" />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      ) : (
-                        <div className="h-full flex items-center justify-center text-gray-500">
-                          No water usage data available
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="farms">
-              <div className="space-y-4">
-                <Button
-                  data-walkthrough="add-farm"
-                  onClick={() => setIsAddingFarm(true)}
-                  className="mb-4"
-                >
-                  Add New Farm
-                </Button>
-
-                <Dialog open={isAddingFarm} onOpenChange={setIsAddingFarm}>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Add New Farm</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleAddFarm} className="space-y-4">
-                      <div>
-                        <Label>Farm Name</Label>
-                        <Input
-                          value={newFarm.name}
-                          onChange={(e) => setNewFarm({ ...newFarm, name: e.target.value })}
-                          required
-                          className="border rounded px-2 py-1"
-                        />
-                      </div>
-                      <div>
-                        <Label>Size (acres)</Label>
-                        <Input
-                          type="number"
-                          value={newFarm.size}
-                          onChange={(e) => setNewFarm({ ...newFarm, size: e.target.value })}
-                          required
-                          className="border rounded px-2 py-1"
-                        />
-                      </div>
-                      <div>
-                        <Label>Current Crop</Label>
-                        <Input
-                          value={newFarm.crop}
-                          onChange={(e) => setNewFarm({ ...newFarm, crop: e.target.value })}
-                          required
-                          className="border rounded px-2 py-1"
-                        />
-                      </div>
-                      <div>
-                        <Label>Crop Rotation History</Label>
-                        <div className="space-y-2">
-                          {newFarm.rotationHistory.map((rotation, index) => (
-                            <div key={index} className="flex gap-2 items-center">
-                              <Input
-                                placeholder="Crop"
-                                value={rotation.crop}
-                                onChange={(e) => {
-                                  const updated = [...newFarm.rotationHistory];
-                                  updated[index].crop = e.target.value;
-                                  setNewFarm({ ...newFarm, rotationHistory: updated });
-                                }}
-                                className="border rounded px-2 py-1"
-                              />
-                              <Input
-                                type="date"
-                                value={rotation.startDate}
-                                onChange={(e) => {
-                                  const updated = [...newFarm.rotationHistory];
-                                  updated[index].startDate = e.target.value;
-                                  setNewFarm({ ...newFarm, rotationHistory: updated });
-                                }}
-                                className="border rounded px-2 py-1"
-                              />
-                              <Input
-                                type="date"
-                                value={rotation.endDate}
-                                onChange={(e) => {
-                                  const updated = [...newFarm.rotationHistory];
-                                  updated[index].endDate = e.target.value;
-                                  setNewFarm({ ...newFarm, rotationHistory: updated });
-                                }}
-                                className="border rounded px-2 py-1"
-                              />
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  const updated = newFarm.rotationHistory.filter((_, i) => i !== index);
-                                  setNewFarm({ ...newFarm, rotationHistory: updated });
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                              setNewFarm({
-                                ...newFarm,
-                                rotationHistory: [
-                                  ...newFarm.rotationHistory,
-                                  { crop: '', startDate: '', endDate: '' }
-                                ]
-                              });
-                            }}
-                          >
-                            Add Rotation Entry
-                          </Button>
-                        </div>
-                      </div>
-                      <Button type="submit" className="w-full">
-                        Add Farm
-                      </Button>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-
-                <Dialog open={isEditingFarm} onOpenChange={setIsEditingFarm}>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Edit Farm</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleEditFarm} className="space-y-4">
-                      <div>
-                        <Label>Farm Name</Label>
-                        <Input
-                          value={newFarm.name}
-                          onChange={(e) => setNewFarm({ ...newFarm, name: e.target.value })}
-                          required
-                          className="border rounded px-2 py-1"
-                        />
-                      </div>
-                      <div>
-                        <Label>Size (acres)</Label>
-                        <Input
-                          type="number"
-                          value={newFarm.size}
-                          onChange={(e) => setNewFarm({ ...newFarm, size: e.target.value })}
-                          required
-                          className="border rounded px-2 py-1"
-                        />
-                      </div>
-                      <div>
-                        <Label>Crop Type</Label>
-                        <Input
-                          value={newFarm.crop}
-                          onChange={(e) => setNewFarm({ ...newFarm, crop: e.target.value })}
-                          required
-                          className="border rounded px-2 py-1"
-                        />
-                      </div>
-                      <Button type="submit" className="w-full">
-                        Save Changes
-                      </Button>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {farms.length > 0 ? (
-                    farms.map((farm) => (
-                      <Card
-                        key={farm.id}
-                        className="cursor-pointer hover:shadow-lg transition-shadow"
-                      >
-                        <CardHeader>
-                          <CardTitle>{farm.name}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            <p className="text-gray-500">Current Crop: {farm.crop}</p>
-                            <p className="text-gray-500">Size: {farm.size.toLocaleString()} acres</p>
-                            
-                            {farm.rotationHistory && farm.rotationHistory.length > 0 && (
-                              <div className="mt-4">
-                                <p className="font-medium mb-2">Crop Rotation History</p>
-                                <div className="space-y-1">
-                                  {farm.rotationHistory.map((rotation, index) => (
-                                    <div key={index} className="text-sm text-gray-600">
-                                      {rotation.crop}: {new Date(rotation.startDate).toLocaleDateString()} - {new Date(rotation.endDate).toLocaleDateString()}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <Droplet className="h-4 w-4 text-blue-500" />
-                                <span>
-                                  Last watered:{" "}
-                                  {farm.waterHistory.length > 0
-                                    ? new Date(
-                                        farm.waterHistory[farm.waterHistory.length - 1].date
-                                      ).toLocaleDateString()
-                                    : "Never"}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Leaf className="h-4 w-4 text-green-500" />
-                                <span>
-                                  Last fertilized:{" "}
-                                  {farm.fertilizerHistory.length > 0
-                                    ? new Date(
-                                        farm.fertilizerHistory[farm.fertilizerHistory.length - 1]
-                                          .date
-                                      ).toLocaleDateString()
-                                    : "Never"}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <LayoutDashboard className="h-4 w-4 text-purple-500" />
-                                <span>
-                                  Last harvest:{" "}
-                                  {farm.harvestHistory.length > 0
-                                    ? new Date(
-                                        farm.harvestHistory[farm.harvestHistory.length - 1].date
-                                      ).toLocaleDateString()
-                                    : "Never"}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <RotateCw className="h-4 w-4 text-orange-500" />
-                                <span>
-                                  Last rotation:{" "}
-                                  {farm.rotationHistory && farm.rotationHistory.length > 0
-                                    ? `${farm.rotationHistory[farm.rotationHistory.length - 1].crop} (${
-                                        new Date(farm.rotationHistory[farm.rotationHistory.length - 1].startDate).toLocaleDateString()
-                                      })`
-                                    : "Never"}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex justify-end gap-2">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => {
-                                  setEditingFarm(farm);
-                                  setNewFarm({ 
-                                    name: farm.name, 
-                                    size: farm.size, 
-                                    crop: farm.crop,
-                                    rotationHistory: farm.rotationHistory || []
-                                  });
-                                  setIsEditingFarm(true);
-                                }}
-                              >
-                                <Edit3 className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleDeleteFarm(farm.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  ) : (
-                    <div className="col-span-2 text-center p-8 border rounded-lg border-dashed">
-                      <p className="text-gray-500">
-                        No farms added yet. Click "Add New Farm" to get started.
-                      </p>
-                    </div>
-                  )}
+      
+      {isLoggedIn ? (
+        <div className="p-6 max-w-7xl mx-auto bg-white">
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-6 pb-6 border-b">
+              <div className="flex items-center gap-4">
+                <img 
+                  src="./logo.svg" 
+                  alt="Farm Management" 
+                  className="h-12 w-12"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.onerror = null; // Avoid infinite loop
+                    target.src = "/logo.svg"; // Try alternative path
+                    console.log("Failed to load logo, trying alternative path");
+                  }} 
+                />
+                <div>
+                  <h1 className="text-3xl font-bold">EcoSprout</h1>
+                  <p className="text-gray-500">Manage your farm operations sustainably</p>
                 </div>
               </div>
-            </TabsContent>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium hidden md:inline">
+                  {currentUser?.name || currentUser?.username}
+                </span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem onClick={() => setShowProfileSettings(true)}>
+                      <UserCircle className="mr-2 h-4 w-4" />
+                      <span>Profile Settings</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportData}>
+                      <Download className="mr-2 h-4 w-4" />
+                      <span>Export Data</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => document.getElementById('importDataFile')?.click()}>
+                      <Upload className="mr-2 h-4 w-4" />
+                      <span>Import Data</span>
+                      <input
+                        type="file"
+                        id="importDataFile"
+                        className="hidden"
+                        accept=".json"
+                        onChange={handleImportData}
+                      />
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleStartWalkthrough}>
+                      <Info className="mr-2 h-4 w-4" />
+                      <span>Start Tutorial</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Logout</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
 
-            <TabsContent value="reports">
-              <Reports />
-            </TabsContent>
+            <Tabs defaultValue="overview" className="space-y-4" value={activeTab} onValueChange={setActiveTab}>
+              <div className="flex justify-between items-center">
+                <TabsList className="hidden md:flex">
+                  <TabsTrigger data-walkthrough="overview-tab" value="overview">Overview</TabsTrigger>
+                  <TabsTrigger data-walkthrough="water-tab" value="water">Water Management</TabsTrigger>
+                  <TabsTrigger data-walkthrough="farms-tab" value="farms">Farms</TabsTrigger>
+                  <TabsTrigger data-walkthrough="issues-tab" value="issues">Farm Issues</TabsTrigger>
+                  <TabsTrigger data-walkthrough="reports-tab" value="reports">Reports</TabsTrigger>
+                  <TabsTrigger value="trackers">Sustainability Trackers</TabsTrigger>
+                  <TabsTrigger value="history">History</TabsTrigger>
+                  <TabsTrigger data-walkthrough="planners-tab" value="planners">Planners</TabsTrigger>
+                  <TabsTrigger value="instructions"><Info className="h-4 w-4 mr-2" />Instructions</TabsTrigger>
+                </TabsList>
+              </div>
 
-            <TabsContent value="instructions">
-              {/* Use our imported Instructions component */}
-              <Instructions onStartWalkthrough={handleStartWalkthrough} />
-            </TabsContent>
+              <TabsContent value="overview">
+                <div className="mb-4 flex justify-between items-center">
+                  <h2 className="text-xl font-semibold">Dashboard Overview</h2>
+                  <Button 
+                    variant={isEditMode ? "destructive" : "outline"} 
+                    onClick={() => setIsEditMode(!isEditMode)}
+                    size="icon"
+                    title={isEditMode ? "Exit Edit Mode" : "Customize Dashboard"}
+                  >
+                    {isEditMode ? <X className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+                  </Button>
+                </div>
 
-            <TabsContent value="history">
-              {/* Use the imported HistoryPage component with props */}
-              <HistoryPage 
-                farms={farms} 
-                setEditingWaterUsage={setEditingWaterUsage}
-                editingWaterUsage={editingWaterUsage}
-                isEditingWaterUsage={isEditingWaterUsage}
-                newWaterUsage={newWaterUsage}
-                handleEditWaterUsage={handleEditWaterUsage}
-                setNewWaterUsage={setNewWaterUsage} 
-                setIsEditingWaterUsage={setIsEditingWaterUsage} 
-                setIsAddingWaterUsage={setIsAddingWaterUsage}
-                
-                editingFertilizer={editingFertilizer}
-                isEditingFertilizer={isEditingFertilizer}
-                newFertilizer={newFertilizer}
-                handleEditFertilizer={handleEditFertilizer}
-                setEditingFertilizer={setEditingFertilizer} 
-                setNewFertilizer={setNewFertilizer} 
-                setIsEditingFertilizer={setIsEditingFertilizer} 
-                setIsAddingFertilizer={setIsAddingFertilizer} 
-                
-                editingHarvest={editingHarvest}
-                isEditingHarvest={isEditingHarvest}
-                newHarvest={newHarvest}
-                handleEditHarvest={handleEditHarvest}
-                setEditingHarvest={setEditingHarvest} 
-                setNewHarvest={setNewHarvest} 
-                setIsEditingHarvest={setIsEditingHarvest} 
-                setIsAddingHarvest={setIsAddingHarvest} 
-                
-                newRotation={newRotation}
-                isAddingRotation={isAddingRotation}
-                handleAddRotation={handleAddRotation}
-                setNewRotation={setNewRotation} 
-                setIsAddingRotation={setIsAddingRotation} 
-                
-                setConfirmDelete={setConfirmDelete} 
-              />
-            </TabsContent>
+                <DraggableWidgetLayout 
+                  widgets={[
+                    {
+                      ...widgetLayout.find(w => w.i === 'quickActions') || { 
+                        i: 'quickActions', 
+                        title: 'Quick Actions', 
+                        isVisible: true, 
+                        x: 0, y: 0, w: 3, h: 4, minH: 3, minW: 2 
+                      },
+                      content: (
+                        <div className="space-y-2" data-walkthrough="quick-actions">
+                          <Dialog open={isAddingWaterUsage} onOpenChange={setIsAddingWaterUsage}>
+                            <DialogTrigger asChild>
+                              <Button className="w-full bg-blue-500 hover:bg-blue-600">
+                                <Droplet className="h-4 w-4 mr-2" />
+                                Record Water Usage
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Record Water Usage</DialogTitle>
+                              </DialogHeader>
+                              <form onSubmit={isEditingWaterUsage ? handleEditWaterUsage : handleAddWaterUsage} className="space-y-4">
+                                <div>
+                                  <Label>Farm</Label>
+                                  <select 
+                                    className="w-full p-2 border rounded"
+                                    value={newWaterUsage.farmId}
+                                    onChange={(e) => setNewWaterUsage({...newWaterUsage, farmId: e.target.value})}
+                                    required
+                                  >
+                                    <option value="">Select Farm</option>
+                                    {farms.map(farm => (
+                                      <option key={farm.id} value={farm.id}>{farm.name}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div>
+                                  <Label>Amount (gallons)</Label>
+                                  <Input 
+                                    type="number"
+                                    value={newWaterUsage.amount}
+                                    onChange={(e) => setNewWaterUsage({...newWaterUsage, amount: e.target.value})}
+                                    required
+                                    className="border rounded px-2 py-1"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Date</Label>
+                                  <Input 
+                                    type="date"
+                                    value={newWaterUsage.date}
+                                    onChange={(e) => setNewWaterUsage({...newWaterUsage, date: e.target.value})}
+                                    required
+                                    className="border rounded px-2 py-1"
+                                  />
+                                </div>
+                                <Button type="submit" className="w-full">Save Water Usage</Button>
+                              </form>
+                            </DialogContent>
+                          </Dialog>
 
-            <TabsContent value="trackers">
-              <TrackerDashboard 
-                farms={farms}
-                fuelRecords={fuelRecords} 
-                setFuelRecords={setFuelRecords}
-                soilRecords={soilRecords}
-                setSoilRecords={setSoilRecords}
-                emissionSources={emissionSources}
-                setEmissionSources={setEmissionSources}
-                sequestrationActivities={sequestrationActivities}
-                setSequestrationActivities={setSequestrationActivities}
-                energyRecords={energyRecords}
-                setEnergyRecords={setEnergyRecords}
-              />
-            </TabsContent>
+                          <Dialog open={isAddingFertilizer} onOpenChange={setIsAddingFertilizer}>
+                            <DialogTrigger asChild>
+                              <Button className="w-full bg-green-500 hover:bg-green-600">
+                                <Leaf className="h-4 w-4 mr-2" />
+                                Record Fertilizer Application
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Record Fertilizer Application</DialogTitle>
+                              </DialogHeader>
+                              <form onSubmit={isEditingFertilizer ? handleEditFertilizer : handleAddFertilizer} className="space-y-4">
+                                <div>
+                                  <Label>Farm</Label>
+                                  <select 
+                                    className="w-full p-2 border rounded"
+                                    value={newFertilizer.farmId}
+                                    onChange={(e) => setNewFertilizer({...newFertilizer, farmId: e.target.value})}
+                                    required
+                                  >
+                                    <option value="">Select Farm</option>
+                                    {farms.map(farm => (
+                                      <option key={farm.id} value={farm.id}>{farm.name}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div>
+                                  <Label>Type</Label>
+                                  <Input 
+                                    value={newFertilizer.type}
+                                    onChange={(e) => setNewFertilizer({...newFertilizer, type: e.target.value})}
+                                    required
+                                    className="border rounded px-2 py-1"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Amount (lbs)</Label>
+                                  <Input 
+                                    type="number"
+                                    value={newFertilizer.amount}
+                                    onChange={(e) => setNewFertilizer({...newFertilizer, amount: e.target.value})}
+                                    required
+                                    className="border rounded px-2 py-1"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Date</Label>
+                                  <Input 
+                                    type="date"
+                                    value={newFertilizer.date}
+                                    onChange={(e) => setNewFertilizer({...newFertilizer, date: e.target.value})}
+                                    required
+                                    className="border rounded px-2 py-1"
+                                  />
+                                </div>
+                                <Button type="submit" className="w-full">Save Fertilizer Application</Button>
+                              </form>
+                            </DialogContent>
+                          </Dialog>
 
-            <TabsContent value="planners">
-              <PlannerView />
-            </TabsContent>
-          </Tabs>
+                          <Dialog open={isAddingHarvest} onOpenChange={setIsAddingHarvest}>
+                            <DialogTrigger asChild>
+                              <Button className="w-full bg-purple-500 hover:bg-purple-600">
+                                <LayoutDashboard className="h-4 w-4 mr-2" />
+                                Record Harvest
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Record Harvest</DialogTitle>
+                              </DialogHeader>
+                              <form onSubmit={isEditingHarvest ? handleEditHarvest : handleAddHarvest} className="space-y-4">
+                                <div>
+                                  <Label>Farm</Label>
+                                  <select 
+                                    className="w-full p-2 border rounded"
+                                    value={newHarvest.farmId}
+                                    onChange={(e) => setNewHarvest({...newHarvest, farmId: e.target.value})}
+                                    required
+                                  >
+                                    <option value="">Select Farm</option>
+                                    {farms.map(farm => (
+                                      <option key={farm.id} value={farm.id}>{farm.name}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div>
+                                  <Label>Amount (bushels)</Label>
+                                  <Input 
+                                    type="number"
+                                    value={newHarvest.amount}
+                                    onChange={(e) => setNewHarvest({...newHarvest, amount: e.target.value})}
+                                    required
+                                    className="border rounded px-2 py-1"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Date</Label>
+                                  <Input 
+                                    type="date"
+                                    value={newHarvest.date}
+                                    onChange={(e) => setNewHarvest({...newHarvest, date: e.target.value})}
+                                    required
+                                    className="border rounded px-2 py-1"
+                                  />
+                                </div>
+                                <Button type="submit" className="w-full">Save Harvest</Button>
+                              </form>
+                            </DialogContent>
+                          </Dialog>
+
+                          <Dialog open={isAddingRotation} onOpenChange={setIsAddingRotation}>
+                            <DialogTrigger asChild>
+                              <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                                <RotateCw className="h-4 w-4 mr-2" />
+                                Record Crop Rotation
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Record Crop Rotation</DialogTitle>
+                              </DialogHeader>
+                              <form onSubmit={handleAddRotation} className="space-y-4">
+                                <div>
+                                  <Label>Farm</Label>
+                                  <select 
+                                    className="w-full p-2 border rounded"
+                                    value={newRotation.farmId}
+                                    onChange={(e) => setNewRotation({...newRotation, farmId: e.target.value})}
+                                    required
+                                  >
+                                    <option value="">Select Farm</option>
+                                    {farms.map(farm => (
+                                      <option key={farm.id} value={farm.id}>{farm.name}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div>
+                                  <Label>Crop</Label>
+                                  <Input 
+                                    value={newRotation.crop}
+                                    onChange={(e) => setNewRotation({...newRotation, crop: e.target.value})}
+                                    required
+                                    className="border rounded px-2 py-1"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Start Date</Label>
+                                  <Input 
+                                    type="date"
+                                    value={newRotation.startDate}
+                                    onChange={(e) => setNewRotation({...newRotation, startDate: e.target.value})}
+                                    required
+                                    className="border rounded px-2 py-1"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>End Date</Label>
+                                  <Input 
+                                    type="date"
+                                    value={newRotation.endDate}
+                                    onChange={(e) => setNewRotation({...newRotation, endDate: e.target.value})}
+                                    required
+                                    className="border rounded px-2 py-1"
+                                  />
+                                </div>
+                                <Button type="submit" className="w-full">Save Crop Rotation</Button>
+                              </form>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      )
+                    },
+                    {
+                      ...widgetLayout.find(w => w.i === 'sustainabilityScore') || { 
+                        i: 'sustainabilityScore', 
+                        title: 'Sustainability Score', 
+                        isVisible: true, 
+                        x: 3, y: 0, w: 9, h: 4 
+                      },
+                      content: (
+                        <div data-walkthrough="sustainability">
+                          <SustainabilityScoreCard 
+                            sustainabilityMetrics={sustainabilityMetrics} 
+                            cropFilter={cropFilter} 
+                            setCropFilter={setCropFilter}
+                            farms={getFilteredFarms()}
+                          />
+                        </div>
+                      )
+                    },
+                    {
+                      ...widgetLayout.find(w => w.i === 'weatherPreview') || { 
+                        i: 'weatherPreview', 
+                        title: 'Weather Preview', 
+                        isVisible: true, 
+                        x: 0, y: 4, w: 6, h: 3 
+                      },
+                      content: <WeatherPreview weatherData={weatherData} />
+                    },
+                    {
+                      ...widgetLayout.find(w => w.i === 'upcomingEvents') || { 
+                        i: 'upcomingEvents', 
+                        title: 'Upcoming Events', 
+                        isVisible: true, 
+                        x: 6, y: 4, w: 6, h: 3 
+                      },
+                      content: <UpcomingCropPlan />
+                    },
+                    {
+                      ...widgetLayout.find(w => w.i === 'farmIssues') || { 
+                        i: 'farmIssues', 
+                        title: 'Farm Issues', 
+                        isVisible: true, 
+                        x: 0, y: 7, w: 6, h: 4 
+                      },
+                      content: <FarmIssues />
+                    },
+                    {
+                      ...widgetLayout.find(w => w.i === 'taskManager') || { 
+                        i: 'taskManager', 
+                        title: 'Task Manager', 
+                        isVisible: true, 
+                        x: 6, y: 7, w: 6, h: 4 
+                      },
+                      content: (
+                        <TaskManager 
+                          tasks={tasks} 
+ 
+                          setTasks={setTasks} 
+                          handleDeleteTask={handleDeleteTask}
+                        />
+                      )
+                    },
+                    {
+                      ...widgetLayout.find(w => w.i === 'planningRecommendations') || { 
+                        i: 'planningRecommendations', 
+                        title: 'Planning Recommendations', 
+                        isVisible: true, 
+                        x: 0, y: 11, w: 12, h: 3 
+                      },
+                      content: (
+                        <div className="space-y-3">
+                          {/* Show weather summary first */}
+                          {weatherData.length > 0 && (
+                            <div className="flex items-center p-2 bg-gray-50 rounded-md mb-2">
+                              <div className="flex-grow">
+                                <p className="font-medium">Weather Summary</p>
+                                <p className="text-xs text-gray-600">
+                                  {getPlanningRecommendations.shouldPrepareRainwater 
+                                    ? "Rain is expected in the coming days." 
+                                    : "Mostly dry conditions expected."}
+                                  {" "}Average high: {weatherData.slice(0, 5).reduce((sum, day) => sum + day.temp, 0) / 5}°F
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Only show fertilizer alert if it's actually going to rain */}
+                          {weatherData.length > 0 && getPlanningRecommendations.shouldDelayFertilizer && (
+                            <div className="flex items-center p-2 bg-green-50 rounded-md">
+                              <Leaf className="h-5 w-5 text-green-500 mr-3" />
+                              <div className="flex-grow">
+                                <p className="font-medium">Fertilizer Application Alert</p>
+                                <p className="text-xs text-gray-600">
+                                  Rain is forecasted soon. Consider postponing fertilizer application to avoid runoff.
+                                </p>
+                              </div>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="ml-auto text-green-600" 
+                                onClick={() => {
+                                  setIsAddingFertilizerPlan(true);
+                                }}
+                              >
+                                Plan
+                              </Button>
+                            </div>
+                          )}
+                          
+                          {/* Only show irrigation if there's NO rain expected */}
+                          {weatherData.length > 0 && getPlanningRecommendations.shouldRecommendIrrigation && (
+                            <div className="flex items-center p-2 bg-blue-50 rounded-md">
+                              <Droplet className="h-5 w-5 text-blue-500 mr-3" />
+                              <div className="flex-grow">
+                                <p className="font-medium">Irrigation Needed</p>
+                                <p className="text-xs text-gray-600">
+                                  Hot, dry weather ahead. Consider scheduling irrigation in the next few days.
+                                </p>
+                              </div>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="ml-auto text-blue-600" 
+                                onClick={() => {
+                                  setIsAddingIrrigationPlan(true);
+                                }}
+                              >
+                                Plan
+                              </Button>
+                            </div>
+                          )}
+                          
+                          {irrigationPlans.some(plan => plan.status === 'planned') && (
+                            <div className="flex items-center p-2 bg-green-50 rounded-md">
+                              <Droplet className="h-5 w-5 text-green-500 mr-3" />
+                              <div className="flex-grow">
+                                <p className="font-medium">Irrigation Scheduled</p>
+                                <p className="text-xs text-gray-600">
+                                  {irrigationPlans.filter(p => p.status === 'planned').length} upcoming irrigation {irrigationPlans.filter(p => p.status === 'planned').length === 1 ? 'plan' : 'plans'}
+                                </p>
+                              </div>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="ml-auto text-green-600" 
+                                onClick={() => {
+                                  setActiveTab('planners');
+                                }}
+                              >
+                                View
+                              </Button>
+                            </div>
+                          )}
+                          
+                          {rotationPlans.some(plan => plan.status === 'planned') && (
+                            <div className="flex items-center p-2 bg-orange-50 rounded-md">
+                              <RotateCw className="h-5 w-5 text-orange-500 mr-3" />
+                              <div className="flex-grow">
+                                <p className="font-medium">Crop Rotation Plans</p>
+                                <p className="text-xs text-gray-600">
+                                  {rotationPlans.filter(p => p.status === 'planned').length} crop rotation {rotationPlans.filter(p => p.status === 'planned').length === 1 ? 'plan' : 'plans'} awaiting action
+                                </p>
+                              </div>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="ml-auto text-orange-600" 
+                                onClick={() => {
+                                  setActiveTab('planners');
+                                }}
+                              >
+                                View
+                              </Button>
+                            </div>
+                          )}
+                          
+                          {/* Only show rainwater harvesting if rain is actually expected */}
+                          {getPlanningRecommendations.shouldPrepareRainwater && (
+                            <div className="flex items-center p-2 bg-cyan-50 rounded-md">
+                              <CloudRain className="h-5 w-5 text-cyan-500 mr-3" />
+                              <div className="flex-grow">
+                                <p className="font-medium">Rainwater Harvesting Opportunity</p>
+                                <p className="text-xs text-gray-600">
+                                  Rain is forecasted soon. Consider preparing rainwater harvesting systems.
+                                </p>
+                              </div>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="ml-auto text-cyan-600" 
+                                onClick={() => {
+                                  setIsAddingRainwaterPlan(true);
+                                }}
+                              >
+                                Create Plan
+                              </Button>
+                            </div>
+                          )}
+                          
+                          {!getPlanningRecommendations.shouldRecommendIrrigation && 
+                           !getPlanningRecommendations.shouldDelayFertilizer &&
+                           !getPlanningRecommendations.shouldHarvestSoon &&
+                           !getPlanningRecommendations.shouldPrepareRainwater &&
+                           !irrigationPlans.some(plan => plan.status === 'planned') &&
+                           !rotationPlans.some(plan => plan.status === 'planned') &&
+                           !weatherTaskPlans.some(plan => 
+                              plan.status === 'planned' && 
+                              weatherData.some(day => 
+                                day.weather.toLowerCase().includes((plan.weatherCondition || '').toLowerCase())
+                              )
+                            ) && (
+                            <p className="text-center text-gray-500 py-4">
+                              No immediate planning recommendations at this time
+                            </p>
+                          )}
+                        </div>
+                      )
+                    }
+                  ]}
+                  onWidgetVisibilityChange={handleWidgetVisibilityChange}
+                  onLayoutChange={handleLayoutChange}
+                  isEditMode={isEditMode}
+                />
+              </TabsContent>
+
+              <TabsContent value="issues">
+                {/* Use the imported IssueTracker component with props */}
+                <IssueTracker 
+                  issues={issues} 
+                  setIssues={setIssues} 
+                  handleResolveIssue={handleResolveIssue}
+                />
+              </TabsContent>
+
+              <TabsContent value="water">
+                <div className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Water Usage Tracker</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-[300px]">
+                        {farms.length > 0 ? (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={farms.flatMap(farm => 
+                              farm.waterHistory.map(usage => ({
+                                farm: farm.name,
+                                amount: usage.amount,
+                                date: new Date(usage.date).toLocaleDateString()
+                              }))
+                            )}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="date" />
+                              <YAxis />
+                              <Tooltip />
+                              <Legend />
+                              <Bar dataKey="amount" fill="#3b82f6" name="Water Usage (gal)" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        ) : (
+                          <div className="h-full flex items-center justify-center text-gray-500">
+                            No water usage data available
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="farms">
+                <div className="space-y-4">
+                  <Button
+                    data-walkthrough="add-farm"
+                    onClick={() => setIsAddingFarm(true)}
+                    className="mb-4"
+                  >
+                    Add New Farm
+                  </Button>
+
+                  <Dialog open={isAddingFarm} onOpenChange={setIsAddingFarm}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add New Farm</DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleAddFarm} className="space-y-4">
+                        <div>
+                          <Label>Farm Name</Label>
+                          <Input
+                            value={newFarm.name}
+                            onChange={(e) => setNewFarm({ ...newFarm, name: e.target.value })}
+                            required
+                            className="border rounded px-2 py-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>Size (acres)</Label>
+                          <Input
+                            type="number"
+                            value={newFarm.size}
+                            onChange={(e) => setNewFarm({ ...newFarm, size: e.target.value })}
+                            required
+                            className="border rounded px-2 py-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>Current Crop</Label>
+                          <Input
+                            value={newFarm.crop}
+                            onChange={(e) => setNewFarm({ ...newFarm, crop: e.target.value })}
+                            required
+                            className="border rounded px-2 py-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>Crop Rotation History</Label>
+                          <div className="space-y-2">
+                            {newFarm.rotationHistory.map((rotation, index) => (
+                              <div key={index} className="flex gap-2 items-center">
+                                <Input
+                                  placeholder="Crop"
+                                  value={rotation.crop}
+                                  onChange={(e) => {
+                                    const updated = [...newFarm.rotationHistory];
+                                    updated[index].crop = e.target.value;
+                                    setNewFarm({ ...newFarm, rotationHistory: updated });
+                                  }}
+                                  className="border rounded px-2 py-1"
+                                />
+                                <Input
+                                  type="date"
+                                  value={rotation.startDate}
+                                  onChange={(e) => {
+                                    const updated = [...newFarm.rotationHistory];
+                                    updated[index].startDate = e.target.value;
+                                    setNewFarm({ ...newFarm, rotationHistory: updated });
+                                  }}
+                                  className="border rounded px-2 py-1"
+                                />
+                                <Input
+                                  type="date"
+                                  value={rotation.endDate}
+                                  onChange={(e) => {
+                                    const updated = [...newFarm.rotationHistory];
+                                    updated[index].endDate = e.target.value;
+                                    setNewFarm({ ...newFarm, rotationHistory: updated });
+                                  }}
+                                  className="border rounded px-2 py-1"
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    const updated = newFarm.rotationHistory.filter((_, i) => i !== index);
+                                    setNewFarm({ ...newFarm, rotationHistory: updated });
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                setNewFarm({
+                                  ...newFarm,
+                                  rotationHistory: [
+                                    ...newFarm.rotationHistory,
+                                    { crop: '', startDate: '', endDate: '' }
+                                  ]
+                                });
+                              }}
+                            >
+                              Add Rotation Entry
+                            </Button>
+                          </div>
+                        </div>
+                        <Button type="submit" className="w-full">
+                          Add Farm
+                        </Button>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Dialog open={isEditingFarm} onOpenChange={setIsEditingFarm}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Edit Farm</DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleEditFarm} className="space-y-4">
+                        <div>
+                          <Label>Farm Name</Label>
+                          <Input
+                            value={newFarm.name}
+                            onChange={(e) => setNewFarm({ ...newFarm, name: e.target.value })}
+                            required
+                            className="border rounded px-2 py-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>Size (acres)</Label>
+                          <Input
+                            type="number"
+                            value={newFarm.size}
+                            onChange={(e) => setNewFarm({ ...newFarm, size: e.target.value })}
+                            required
+                            className="border rounded px-2 py-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>Crop Type</Label>
+                          <Input
+                            value={newFarm.crop}
+                            onChange={(e) => setNewFarm({ ...newFarm, crop: e.target.value })}
+                            required
+                            className="border rounded px-2 py-1"
+                          />
+                        </div>
+                        <Button type="submit" className="w-full">
+                          Save Changes
+                        </Button>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {farms.length > 0 ? (
+                      farms.map((farm) => (
+                        <Card
+                          key={farm.id}
+                          className="cursor-pointer hover:shadow-lg transition-shadow"
+                        >
+                          <CardHeader>
+                            <CardTitle>{farm.name}</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2">
+                              <p className="text-gray-500">Current Crop: {farm.crop}</p>
+                              <p className="text-gray-500">Size: {farm.size.toLocaleString()} acres</p>
+                              
+                              {farm.rotationHistory && farm.rotationHistory.length > 0 && (
+                                <div className="mt-4">
+                                  <p className="font-medium mb-2">Crop Rotation History</p>
+                                  <div className="space-y-1">
+                                    {farm.rotationHistory.map((rotation, index) => (
+                                      <div key={index} className="text-sm text-gray-600">
+                                        {rotation.crop}: {new Date(rotation.startDate).toLocaleDateString()} - {new Date(rotation.endDate).toLocaleDateString()}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <Droplet className="h-4 w-4 text-blue-500" />
+                                  <span>
+                                    Last watered:{" "}
+                                    {farm.waterHistory.length > 0
+                                      ? new Date(
+                                          farm.waterHistory[farm.waterHistory.length - 1].date
+                                        ).toLocaleDateString()
+                                      : "Never"}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Leaf className="h-4 w-4 text-green-500" />
+                                  <span>
+                                    Last fertilized:{" "}
+                                    {farm.fertilizerHistory.length > 0
+                                      ? new Date(
+                                          farm.fertilizerHistory[farm.fertilizerHistory.length - 1]
+                                            .date
+                                      ).toLocaleDateString()
+                                      : "Never"}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <LayoutDashboard className="h-4 w-4 text-purple-500" />
+                                  <span>
+                                    Last harvest:{" "}
+                                    {farm.harvestHistory.length > 0
+                                      ? new Date(
+                                          farm.harvestHistory[farm.harvestHistory.length - 1].date
+                                        ).toLocaleDateString()
+                                      : "Never"}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <RotateCw className="h-4 w-4 text-orange-500" />
+                                  <span>
+                                    Last rotation:{" "}
+                                    {farm.rotationHistory && farm.rotationHistory.length > 0
+                                      ? `${farm.rotationHistory[farm.rotationHistory.length - 1].crop} (${
+                                          new Date(farm.rotationHistory[farm.rotationHistory.length - 1].startDate).toLocaleDateString()
+                                        })`
+                                      : "Never"}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex justify-end gap-2">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingFarm(farm);
+                                    setNewFarm({ 
+                                      name: farm.name, 
+                                      size: farm.size, 
+                                      crop: farm.crop,
+                                      rotationHistory: farm.rotationHistory || []
+                                    });
+                                    setIsEditingFarm(true);
+                                  }}
+                                >
+                                  <Edit3 className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleDeleteFarm(farm.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    ) : (
+                      <div className="col-span-2 text-center p-8 border rounded-lg border-dashed">
+                        <p className="text-gray-500">
+                          No farms added yet. Click "Add New Farm" to get started.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="reports">
+                <Reports />
+              </TabsContent>
+
+              <TabsContent value="instructions">
+                {/* Use our imported Instructions component */}
+                <Instructions onStartWalkthrough={handleStartWalkthrough} />
+              </TabsContent>
+
+              <TabsContent value="history">
+                {/* Use the imported HistoryPage component with props */}
+                <HistoryPage 
+                  farms={farms} 
+                  setEditingWaterUsage={setEditingWaterUsage}
+                  editingWaterUsage={editingWaterUsage}
+                  isEditingWaterUsage={isEditingWaterUsage}
+                  newWaterUsage={newWaterUsage}
+                  handleEditWaterUsage={handleEditWaterUsage}
+                  setNewWaterUsage={setNewWaterUsage} 
+                  setIsEditingWaterUsage={setIsEditingWaterUsage} 
+                  setIsAddingWaterUsage={setIsAddingWaterUsage}
+                  
+                  editingFertilizer={editingFertilizer}
+                  isEditingFertilizer={isEditingFertilizer}
+                  newFertilizer={newFertilizer}
+                  handleEditFertilizer={handleEditFertilizer}
+                  setEditingFertilizer={setEditingFertilizer} 
+                  setNewFertilizer={setNewFertilizer} 
+                  setIsEditingFertilizer={setIsEditingFertilizer} 
+                  setIsAddingFertilizer={setIsAddingFertilizer} 
+                  
+                  editingHarvest={editingHarvest}
+                  isEditingHarvest={isEditingHarvest}
+                  newHarvest={newHarvest}
+                  handleEditHarvest={handleEditHarvest}
+                  setEditingHarvest={setEditingHarvest} 
+                  setNewHarvest={setNewHarvest} 
+                  setIsEditingHarvest={setIsEditingHarvest} 
+                  setIsAddingHarvest={setIsAddingHarvest} 
+                  
+                  newRotation={newRotation}
+                  isAddingRotation={isAddingRotation}
+                  handleAddRotation={handleAddRotation}
+                  setNewRotation={setNewRotation} 
+                  setIsAddingRotation={setIsAddingRotation} 
+                  
+                  setConfirmDelete={setConfirmDelete} 
+                />
+              </TabsContent>
+
+              <TabsContent value="trackers">
+                <TrackerDashboard 
+                  farms={farms}
+                  fuelRecords={fuelRecords} 
+                  setFuelRecords={setFuelRecords}
+                  soilRecords={soilRecords}
+                  setSoilRecords={setSoilRecords}
+                  emissionSources={emissionSources}
+                  setEmissionSources={setEmissionSources}
+                  sequestrationActivities={sequestrationActivities}
+                  setSequestrationActivities={setSequestrationActivities}
+                  energyRecords={energyRecords}
+                  setEnergyRecords={setEnergyRecords}
+                />
+              </TabsContent>
+
+              <TabsContent value="planners">
+                <PlannerView />
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex items-center justify-center min-h-screen bg-gray-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader className="text-center">
+              <img 
+                src="./logo.svg" 
+                alt="EcoSprout" 
+                className="h-16 w-16 mx-auto mb-2"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.onerror = null;
+                  target.src = "/logo.svg";
+                }}
+              />
+              <CardTitle className="text-2xl font-bold">Welcome to EcoSprout</CardTitle>
+              <p className="text-gray-500">Login or register to manage your farm operations</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button 
+                className="w-full"
+                onClick={() => {
+                  setShowLoginModal(true);
+                }}
+              >
+                <LogIn className="mr-2 h-4 w-4" />
+                Login / Register
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <Dialog open={!!confirmDelete} onOpenChange={() => setConfirmDelete(null)}>
         <DialogContent>
