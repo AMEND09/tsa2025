@@ -47,6 +47,7 @@ import WeatherTaskPlanForm from './components/WeatherTaskPlanForm';
 import RotationPlanForm from './components/RotationPlanForm';
 import RainwaterPlanForm from './components/RainwaterPlanForm';
 import TrackerDashboard from './components/TrackerDashboard';
+import { DataStorage } from '@/services/DataStorage';
 
 const DefaultComponent = (): React.ReactNode => {
   // Define walkthrough steps for the Walkthrough component
@@ -124,8 +125,7 @@ const DefaultComponent = (): React.ReactNode => {
   ];
 
   const [farms, setFarms] = useState<Farm[]>(() => {
-    const savedFarms = localStorage.getItem('farms');
-    return savedFarms ? JSON.parse(savedFarms) : [];
+    return DataStorage.getData<Farm[]>('farms', []);
   });
 
   const [weatherData, setWeatherData] = useState<WeatherData[]>([]);
@@ -155,15 +155,11 @@ const DefaultComponent = (): React.ReactNode => {
   const [activeTab, setActiveTab] = useState("overview");
   const [confirmDelete, setConfirmDelete] = useState<ConfirmDelete | null>(null);
   const [cropPlanEvents, setCropPlanEvents] = useState<CropPlanEvent[]>(() => {
-    const savedEvents = localStorage.getItem('cropPlanEvents');
-    return savedEvents ? JSON.parse(savedEvents, (key, value) => {
-      if (key === 'start' || key === 'end') return new Date(value);
-      return value;
-    }) : [];
+    return DataStorage.getData<CropPlanEvent[]>('cropPlanEvents', []);
   });
 
   const [showWalkthrough, setShowWalkthrough] = useState(() => {
-    return !localStorage.getItem('walkthroughCompleted');
+    return !DataStorage.isWalkthroughCompleted();
   });
 
   const [isAddingRotation, setIsAddingRotation] = useState(false);
@@ -182,64 +178,52 @@ const DefaultComponent = (): React.ReactNode => {
   } | null>(null);
 
   const [plantingPlans, setPlantingPlans] = useState<PlanItem[]>(() => {
-    const saved = localStorage.getItem('plantingPlans');
-    return saved ? JSON.parse(saved) : [];
+    return DataStorage.getData<PlanItem[]>('plantingPlans', []);
   });
 
   const [fertilizerPlans, setFertilizerPlans] = useState<PlanItem[]>(() => {
-    const saved = localStorage.getItem('fertilizerPlans');
-    return saved ? JSON.parse(saved) : [];
+    return DataStorage.getData<PlanItem[]>('fertilizerPlans', []);
   });
 
   const [pestManagementPlans, setPestManagementPlans] = useState<PlanItem[]>(() => {
-    const saved = localStorage.getItem('pestManagementPlans');
-    return saved ? JSON.parse(saved) : [];
+    return DataStorage.getData<PlanItem[]>('pestManagementPlans', []);
   });
   
   const [irrigationPlans, setIrrigationPlans] = useState<PlanItem[]>(() => {
-    const saved = localStorage.getItem('irrigationPlans');
-    return saved ? JSON.parse(saved) : [];
+    return DataStorage.getData<PlanItem[]>('irrigationPlans', []);
   });
   
   const [weatherTaskPlans, setWeatherTaskPlans] = useState<PlanItem[]>(() => {
-    const saved = localStorage.getItem('weatherTaskPlans');
-    return saved ? JSON.parse(saved) : [];
+    return DataStorage.getData<PlanItem[]>('weatherTaskPlans', []);
   });
   
   const [rotationPlans, setRotationPlans] = useState<PlanItem[]>(() => {
-    const saved = localStorage.getItem('rotationPlans');
-    return saved ? JSON.parse(saved) : [];
+    return DataStorage.getData<PlanItem[]>('rotationPlans', []);
   });
   
   const [rainwaterPlans, setRainwaterPlans] = useState<PlanItem[]>(() => {
-    const saved = localStorage.getItem('rainwaterPlans');
-    return saved ? JSON.parse(saved) : [];
+    return DataStorage.getData<PlanItem[]>('rainwaterPlans', []);
   });
 
   // Add state for tracker components
   const [fuelRecords, setFuelRecords] = useState<FuelRecord[]>(() => {
-    const saved = localStorage.getItem('fuelRecords');
-    return saved ? JSON.parse(saved) : [];
+    return DataStorage.getData<FuelRecord[]>('fuelRecords', []);
   });
   
   const [soilRecords, setSoilRecords] = useState<SoilRecord[]>(() => {
-    const saved = localStorage.getItem('soilRecords');
-    return saved ? JSON.parse(saved) : [];
+    return DataStorage.getData<SoilRecord[]>('soilRecords', []);
   });
   
   const [emissionSources, setEmissionSources] = useState<CarbonEmissionSource[]>(() => {
-    const saved = localStorage.getItem('emissionSources');
-    return saved ? JSON.parse(saved) : [];
+    return DataStorage.getData<CarbonEmissionSource[]>('emissionSources', []);
   });
   
   const [sequestrationActivities, setSequestrationActivities] = useState<CarbonSequestrationActivity[]>(() => {
-    const saved = localStorage.getItem('sequestrationActivities');
-    return saved ? JSON.parse(saved) : [];
+    return DataStorage.getData<CarbonSequestrationActivity[]>('sequestrationActivities', []);
   });
   
   const [energyRecords, setEnergyRecords] = useState<EnergyRecord[]>(() => {
-    const saved = localStorage.getItem('energyRecords');
-    return saved ? JSON.parse(saved) : [];
+    return DataStorage.getData<EnergyRecord[]>('energyRecords', []);
   });
 
   const [isAddingPlantingPlan, setIsAddingPlantingPlan] = useState(false);
@@ -418,7 +402,7 @@ const DefaultComponent = (): React.ReactNode => {
   };
 
   useEffect(() => {
-    localStorage.setItem('farms', JSON.stringify(farms));
+    DataStorage.setData('farms', farms);
   }, [farms]);
 
   useEffect(() => {
@@ -426,7 +410,7 @@ const DefaultComponent = (): React.ReactNode => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('cropPlanEvents', JSON.stringify(cropPlanEvents));
+    DataStorage.setData('cropPlanEvents', cropPlanEvents);
   }, [cropPlanEvents]);
 
   useEffect(() => {
@@ -437,51 +421,51 @@ const DefaultComponent = (): React.ReactNode => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('plantingPlans', JSON.stringify(plantingPlans));
+    DataStorage.setData('plantingPlans', plantingPlans);
   }, [plantingPlans]);
 
   useEffect(() => {
-    localStorage.setItem('fertilizerPlans', JSON.stringify(fertilizerPlans));
+    DataStorage.setData('fertilizerPlans', fertilizerPlans);
   }, [fertilizerPlans]);
 
   useEffect(() => {
-    localStorage.setItem('pestManagementPlans', JSON.stringify(pestManagementPlans));
+    DataStorage.setData('pestManagementPlans', pestManagementPlans);
   }, [pestManagementPlans]);
   
   useEffect(() => {
-    localStorage.setItem('irrigationPlans', JSON.stringify(irrigationPlans));
+    DataStorage.setData('irrigationPlans', irrigationPlans);
   }, [irrigationPlans]);
   
   useEffect(() => {
-    localStorage.setItem('weatherTaskPlans', JSON.stringify(weatherTaskPlans));
+    DataStorage.setData('weatherTaskPlans', weatherTaskPlans);
   }, [weatherTaskPlans]);
   
   useEffect(() => {
-    localStorage.setItem('rotationPlans', JSON.stringify(rotationPlans));
+    DataStorage.setData('rotationPlans', rotationPlans);
   }, [rotationPlans]);
   
   useEffect(() => {
-    localStorage.setItem('rainwaterPlans', JSON.stringify(rainwaterPlans));
+    DataStorage.setData('rainwaterPlans', rainwaterPlans);
   }, [rainwaterPlans]);
   
   useEffect(() => {
-    localStorage.setItem('fuelRecords', JSON.stringify(fuelRecords));
+    DataStorage.setData('fuelRecords', fuelRecords);
   }, [fuelRecords]);
   
   useEffect(() => {
-    localStorage.setItem('soilRecords', JSON.stringify(soilRecords));
+    DataStorage.setData('soilRecords', soilRecords);
   }, [soilRecords]);
   
   useEffect(() => {
-    localStorage.setItem('emissionSources', JSON.stringify(emissionSources));
+    DataStorage.setData('emissionSources', emissionSources);
   }, [emissionSources]);
   
   useEffect(() => {
-    localStorage.setItem('sequestrationActivities', JSON.stringify(sequestrationActivities));
+    DataStorage.setData('sequestrationActivities', sequestrationActivities);
   }, [sequestrationActivities]);
   
   useEffect(() => {
-    localStorage.setItem('energyRecords', JSON.stringify(energyRecords));
+    DataStorage.setData('energyRecords', energyRecords);
   }, [energyRecords]);
 
   const fetchUserLocation = async () => {
@@ -1009,12 +993,12 @@ const DefaultComponent = (): React.ReactNode => {
 
   const handleWalkthroughComplete = () => {
     setShowWalkthrough(false);
-    localStorage.setItem('walkthroughCompleted', 'true');
+    DataStorage.markWalkthroughCompleted();
   };
 
   const handleStartWalkthrough = () => {
     setShowWalkthrough(true);
-    localStorage.removeItem('walkthroughCompleted');
+    DataStorage.removeData('walkthroughCompleted');
     setActiveTab('overview'); // Switch to overview tab when starting walkthrough
   };
 

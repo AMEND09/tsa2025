@@ -91,7 +91,7 @@ EcoSprout empowers farmers with tools to optimize agricultural operations throug
 
 ### Data Management
 - React Hooks for state
-- LocalStorage for persistence
+- Data storage abstraction layer (ready for database integration)
 - Open-Meteo API integration
 
 ### Development Tools
