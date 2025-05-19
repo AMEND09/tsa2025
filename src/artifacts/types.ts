@@ -65,7 +65,7 @@ export interface Issue {
 }
 
 export interface ConfirmDelete {
-  id: number;
+  id: number | string; // Allow string for livestock IDs
   type: string;
   date?: string;
   eventId?: number;
@@ -93,6 +93,7 @@ export interface SustainabilityMetrics {
   fuelEfficiency?: number;
   renewablePercentage?: number;
   carbonIntensityPerAcre?: number;
+  livestockManagementScore?: number; // Added for livestock impact
 }
 
 export interface WalkthroughStep {
@@ -111,6 +112,20 @@ export interface MetricsAccumulator {
   harvestEfficiency: number;
   soilQualityScore: number;
   rotationScore: number;
+}
+
+// Livestock types
+export type LivestockType = 'Cattle' | 'Sheep' | 'Poultry' | 'Pigs' | 'Goats' | 'Other';
+export const livestockTypes: LivestockType[] = ['Cattle', 'Sheep', 'Poultry', 'Pigs', 'Goats', 'Other'];
+
+export interface Livestock {
+  id: string;
+  farmId: number;
+  type: LivestockType;
+  breed?: string;
+  count: number;
+  notes?: string;
+  addedDate: string;
 }
 
 export interface ExportData {
@@ -133,6 +148,8 @@ export interface ExportData {
   emissionSources?: CarbonEmissionSource[];
   sequestrationActivities?: CarbonSequestrationActivity[];
   energyRecords?: EnergyRecord[];
+  // Livestock data
+  livestock?: Livestock[];
 }
 
 export type AnyHistoryEntry = {

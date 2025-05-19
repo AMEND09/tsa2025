@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Bar } from 'recharts';
-import { Droplet, Leaf, LayoutDashboard, Info, Trash2, Edit3, RotateCw, Download, Upload, Settings, CloudRain, Pencil, X, UserCircle, LogIn, LogOut } from 'lucide-react';
+import { Droplet, Leaf, LayoutDashboard, Info, Trash2, Edit3, RotateCw, Download, Upload, Settings, CloudRain, Pencil, X, UserCircle, LogIn, LogOut } from 'lucide-react'; // Added PawPrint
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 import {
@@ -22,6 +22,7 @@ import {
   PlanItem
 } from './types';
 import { FuelRecord, SoilRecord, CarbonEmissionSource, CarbonSequestrationActivity, EnergyRecord } from './models/sustainability';
+import LivestockPage, { Livestock} from './components/LivestockPage'; // Corrected import for LivestockPage and added livestockTypes
 
 import {
   walkthroughStyles,
@@ -48,7 +49,7 @@ import RotationPlanForm from './components/RotationPlanForm';
 import RainwaterPlanForm from './components/RainwaterPlanForm';
 import TrackerDashboard from './components/TrackerDashboard';
 import { DataStorage } from '@/services/DataStorage';
-import DraggableWidgetLayout, { Widget } from './components/DraggableWidgetLayout';
+import DraggableWidgetLayout, { Widget } from './components/DraggableWidgetLayout'; // Correct Widget import
 import LoginPage from './components/LoginPage';
 import UserProfileSettings from '@/artifacts/components/UserProfileSettings';
 
@@ -131,6 +132,13 @@ const DefaultComponent = (): React.ReactNode => {
       content: 'Plan your planting, fertilizing, and pest management activities here.',
       placement: 'bottom' as const,
       tabId: 'planners'
+    },
+    {
+      target: '[data-walkthrough="livestock-tab"]',
+      title: 'Livestock Management',
+      content: 'Track and manage your farm livestock here.',
+      placement: 'bottom' as const,
+      tabId: 'livestock'
     }
   ];
 
@@ -215,6 +223,10 @@ const DefaultComponent = (): React.ReactNode => {
     return DataStorage.getData<PlanItem[]>('rainwaterPlans', []);
   });
 
+  const [livestockList, setLivestockList] = useState<Livestock[]>(() => {
+    return DataStorage.getData<Livestock[]>('livestockList', []);
+  });
+
   // Add state for tracker components
   const [fuelRecords, setFuelRecords] = useState<FuelRecord[]>(() => {
     return DataStorage.getData<FuelRecord[]>('fuelRecords', []);
@@ -245,7 +257,8 @@ const DefaultComponent = (): React.ReactNode => {
       { i: 'upcomingEvents', title: 'Upcoming Events', isVisible: true, x: 6, y: 4, w: 6, h: 3, minH: 3, minW: 3 },
       { i: 'farmIssues', title: 'Farm Issues', isVisible: true, x: 0, y: 7, w: 6, h: 4, minH: 3, minW: 3 },
       { i: 'taskManager', title: 'Task Manager', isVisible: true, x: 6, y: 7, w: 6, h: 4, minH: 3, minW: 3 },
-      { i: 'planningRecommendations', title: 'Planning Recommendations', isVisible: true, x: 0, y: 11, w: 12, h: 3, minH: 2, minW: 6 }
+      { i: 'planningRecommendations', title: 'Planning Recommendations', isVisible: true, x: 0, y: 11, w: 12, h: 3, minH: 2, minW: 6 },
+      { i: 'livestockSummary', title: 'Livestock Summary', isVisible: true, x: 0, y: 14, w: 12, h: 4, minH: 3, minW: 4 }
     ]);
   });
 
@@ -579,6 +592,10 @@ const DefaultComponent = (): React.ReactNode => {
   useEffect(() => {
     DataStorage.setData('energyRecords', energyRecords);
   }, [energyRecords]);
+
+  useEffect(() => {
+    DataStorage.setData('livestockList', livestockList);
+  }, [livestockList]);
 
   const fetchUserLocation = async () => {
     try {
@@ -967,6 +984,27 @@ const DefaultComponent = (): React.ReactNode => {
     });
   };
 
+  const handleAddLivestock = (livestock: Omit<Livestock, 'id' | 'addedDate'>) => {
+    const newLivestockItem: Livestock = {
+      ...livestock,
+      id: Date.now().toString(),
+      addedDate: new Date().toISOString().split('T')[0],
+    };
+    setLivestockList([...livestockList, newLivestockItem]);
+  };
+
+  const handleEditLivestock = (updatedLivestock: Livestock) => {
+    setLivestockList(
+      livestockList.map((item) =>
+        item.id === updatedLivestock.id ? updatedLivestock : item
+      )
+    );
+  };
+
+  const handleDeleteLivestock = (livestockId: string) => {
+    setConfirmDelete({ id: livestockId, type: 'livestock' }); // livestockId is string, ConfirmDelete.id now supports string
+  };
+
   const updatePlanStatus = (planType: 'planting' | 'fertilizer' | 'pest' | 'irrigation' | 'weatherTask' | 'rotation' | 'rainwater', id: number, status: 'planned' | 'in-progress' | 'completed' | 'cancelled') => {
     switch (planType) {
       case 'planting':
@@ -1096,6 +1134,9 @@ const DefaultComponent = (): React.ReactNode => {
         case 'rainwaterPlan':
           setRainwaterPlans(rainwaterPlans.filter(plan => plan.id !== confirmDelete.id));
           break;
+        case 'livestock':
+          setLivestockList(livestockList.filter(item => item.id !== confirmDelete.id)); // item.id is string, confirmDelete.id for livestock will be string
+          break;
         default:
           break;
       }
@@ -1134,7 +1175,8 @@ const DefaultComponent = (): React.ReactNode => {
       soilRecords,
       emissionSources,
       sequestrationActivities,
-      energyRecords
+      energyRecords,
+      livestock: livestockList // Changed from livestockList to livestock
     };
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -1237,6 +1279,10 @@ const DefaultComponent = (): React.ReactNode => {
         
         if (importedData.energyRecords && Array.isArray(importedData.energyRecords)) {
           setEnergyRecords(importedData.energyRecords);
+        }
+
+        if (importedData.livestock && Array.isArray(importedData.livestock)) { // Changed from livestockList to livestock
+          setLivestockList(importedData.livestock); // Changed from livestockList to livestock
         }
 
         setImportNotification({
@@ -1606,6 +1652,7 @@ const DefaultComponent = (): React.ReactNode => {
   };
 
   return (
+    <Suspense fallback={<div className="w-full h-screen flex items-center justify-center"><p>Loading application...</p></div>}>
     <>
       {!isLoggedIn && (
         <LoginPage 
@@ -1708,6 +1755,7 @@ const DefaultComponent = (): React.ReactNode => {
                   <TabsTrigger value="history">History</TabsTrigger>
                   <TabsTrigger data-walkthrough="planners-tab" value="planners">Planners</TabsTrigger>
                   <TabsTrigger value="instructions"><Info className="h-4 w-4 mr-2" />Instructions</TabsTrigger>
+                  <TabsTrigger data-walkthrough="livestock-tab" value="livestock">Livestock</TabsTrigger>
                 </TabsList>
               </div>
 
@@ -2025,7 +2073,7 @@ const DefaultComponent = (): React.ReactNode => {
                         i: 'planningRecommendations', 
                         title: 'Planning Recommendations', 
                         isVisible: true, 
-                        x: 0, y: 11, w: 12, h: 3 
+                        x: 0, y: 11, w: 12, h: 3, minH: 2, minW: 6 
                       },
                       content: (
                         <div className="space-y-3">
@@ -2568,6 +2616,16 @@ const DefaultComponent = (): React.ReactNode => {
               <TabsContent value="planners">
                 <PlannerView />
               </TabsContent>
+
+              <TabsContent value="livestock">
+                <LivestockPage
+                  livestockList={livestockList}
+                  farms={farms}
+                  onAddLivestock={handleAddLivestock}
+                  onEditLivestock={handleEditLivestock}
+                  onDeleteLivestock={handleDeleteLivestock}
+                />
+              </TabsContent>
             </Tabs>
           </div>
         </div>
@@ -2702,6 +2760,7 @@ const DefaultComponent = (): React.ReactNode => {
         </DialogContent>
       </Dialog>
     </>
+    </Suspense>
   );
 };
 
