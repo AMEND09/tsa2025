@@ -1,6 +1,6 @@
 {
-  "name": "EcoSprout",
-  "short_name": "EcoSprout",
+  "name": "AgriMind AI",
+  "short_name": "AgriMind AI",
   "description": "Track and manage your farm's water usage, fertilizer applications, and harvests",
   "start_url": ".",
   "display": "standalone",
