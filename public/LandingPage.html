@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriMind AI - Smart Farming Solutions</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: #2bb24c;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            background-color: #239b3f;
+            transform: translateY(-2px);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+
+        .animate-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Navbar */
+        .navbar {
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            transition: background-color 0.3s;
+        }
+
+        .navbar.scrolled {
+            background-color: rgba(255, 255, 255, 0.95);
+        }
+
+        .navbar .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #000;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 25px;
+            align-items: center;
+        }
+
+        .nav-links li a {
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links li a:hover {
+            color: #2bb24c;
+        }
+
+        .nav-links .login-btn {
+            background: none;
+            padding: 0;
+            border: none;
+            font-size: 1rem;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(180deg, #f9f9f9, #fff);
+            height: 80vh; /* Full viewport height */
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 70px; /* Adjust for navbar height */
+            box-sizing: border-box;
+        }
+
+        .hero-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 40px; /* Space between text and image */
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .hero-text {
+            flex: 1;
+            text-align: left; /* Align text to the left for better readability */
+        }
+
+        .hero-text h1 {
+            font-size: 3.2rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .hero-text p {
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+            color: #666;
+            max-width: 500px; /* Limit text width for readability */
+        }
+
+        .hero-cta {
+            display: flex;
+            justify-content: flex-start; /* Align button to the left */
+            gap: 15px;
+        }
+
+        .hero-cta .btn-primary {
+            padding: 15px 30px; /* Slightly larger button for emphasis */
+            font-size: 1.1rem;
+        }
+
+        .hero-image {
+            flex: 1;
+            display: flex;
+            justify-content: flex-end; /* Align image to the right */
+        }
+
+        .hero-image img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px; /* Subtle rounding for a polished look */
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+            transition: transform 0.3s ease; /* Smooth hover effect */
+        }
+
+        .hero-image img:hover {
+            transform: scale(1.05); /* Slight zoom on hover for interactivity */
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 0;
+            text-align: center;
+            background-color: #fff;
+        }
+
+        .features h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .features p {
+            font-size: 1.2rem;
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto 40px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature-card i {
+            font-size: 2.5rem;
+            color: #2bb24c;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            font-size: 1.6rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .feature-card p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        /* Testimonials Section */
+        .testimonials {
+            background-color: #f9f9f9;
+            padding: 80px 0;
+            text-align: center;
+        }
+
+        .testimonials h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .testimonials p {
+            font-size: 1.2rem;
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto 40px;
+        }
+
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .testimonial-card {
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+
+        .testimonial-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .testimonial-card i {
+            font-size: 2.5rem;
+            color: #2bb24c;
+            margin-bottom: 15px;
+        }
+
+        .testimonial-card .stars {
+            color: #FFD700;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+        }
+
+        .testimonial-card p {
+            font-style: italic;
+            margin-bottom: 15px;
+            color: #555;
+            font-size: 1rem;
+        }
+
+        .testimonial-card h4 {
+            font-size: 1.3rem;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .testimonial-card span {
+            color: #777;
+            font-size: 0.9rem;
+            font-weight: 400;
+        }
+
+        /* Affiliations Section */
+        .affiliations {
+            padding: 80px 0;
+            text-align: center;
+            background-color: #fff;
+            width: 100vw;
+        }
+
+        .affiliations h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .affiliations p {
+            font-size: 1.2rem;
+            color: #666;
+            width: 85%;
+            margin: 0 auto 40px;
+        }
+
+        .carousel {
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .carousel-track {
+            display: flex;
+            align-items: center;
+            animation: slide 20s linear infinite;
+            width: max-content;
+        }
+
+        .carousel-track img {
+            width: 200px; /* Increased width for a wider carousel */
+            height: 120px; /* Adjusted height proportionally */
+            margin: 0 30px; /* Increased margin for spacing */
+            object-fit: contain;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .carousel-track img:hover {
+            opacity: 1;
+        }
+
+        @keyframes slide {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* FAQ Section */
+        .faq {
+            padding: 80px 0;
+            text-align: center;
+            background-color: #fff;
+        }
+
+        .faq h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .faq p {
+            font-size: 1.2rem;
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto 40px;
+        }
+
+        .faq-item {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+
+        .faq-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .faq-question {
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.3s;
+        }
+
+        .faq-question:hover {
+            background-color: #e0e0e0;
+        }
+
+        .faq-question::after {
+            content: '+';
+            font-size: 1.5rem;
+            color: #2bb24c;
+        }
+
+        .faq-item.active .faq-question::after {
+            content: '−';
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            padding: 0 20px;
+            background-color: #fff;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+
+        .faq-item.active .faq-answer {
+            max-height: 200px;
+            padding: 20px;
+        }
+
+        .faq-answer p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        /* CTA Section */
+        .cta {
+            padding: 80px 0;
+            text-align: center;
+            background: linear-gradient(135deg, #2bb24c, #1a8b3a);
+            color: #fff;
+        }
+
+        .cta h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .cta p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta .btn-primary {
+            background-color: #fff;
+            color: #2bb24c;
+            font-size: 1.1rem;
+            padding: 15px 30px;
+        }
+
+        .cta .btn-primary:hover {
+            background-color: #f0f0f0;
+            color: #239b3f;
+        }
+
+        /* Footer */
+        .footer {
+            background-color: #333;
+            color: #fff;
+            padding: 80px 0 20px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer h4 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .footer ul {
+            list-style: none;
+        }
+
+        .footer ul li {
+            margin-bottom: 12px;
+        }
+
+        .footer ul li a {
+            color: #ccc;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer ul li a:hover {
+            color: #fff;
+        }
+
+        .footer-copy {
+            text-align: center;
+            color: #ccc;
+            font-size: 0.9rem;
+            padding-top: 20px;
+            border-top: 1px solid #444;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero {
+                padding-top: 60px; /* Adjust for smaller navbar height on mobile */
+                height: auto; /* Allow content to dictate height on mobile */
+                padding-bottom: 40px; /* Add bottom padding for spacing */
+            }
+
+            .hero-content {
+                flex-direction: column; /* Stack text and image on mobile */
+                gap: 30px;
+                text-align: center;
+            }
+
+            .hero-text {
+                text-align: center; /* Center text on mobile */
+            }
+
+            .hero-text h1 {
+                font-size: 2.2rem; /* Smaller heading on mobile */
+            }
+
+            .hero-text p {
+                font-size: 1.1rem;
+                max-width: 100%; /* Full width for readability */
+            }
+
+            .hero-cta {
+                justify-content: center; /* Center button on mobile */
+            }
+
+            .hero-image {
+                justify-content: center; /* Center image on mobile */
+            }
+
+            .hero-image img {
+                max-width: 80%; /* Slightly smaller image on mobile */
+            }
+
+            .features h2, .testimonials h2, .affiliations h2, .faq h2, .cta h2 {
+                font-size: 2rem;
+            }
+
+            .faq-answer {
+                max-height: 300px;
+            }
+
+            .carousel-track img {
+                width: 150px;
+                height: 90px;
+                margin: 0 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="#" class="logo">AgriMind AI</a>
+            <ul class="nav-links">
+                <li><a href="login.html" class="login-btn">Login</a></li>
+                <li><a href="register.html" class="btn btn-primary">Get Started</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1 class="animate-on-scroll">Empower Your Farm with AgriMind AI</h1>
+                    <p class="animate-on-scroll">
+                        AgriMind AI uses advanced AI to help farmers track, record, and plan sustainability and efficiency metrics like water usage, CO2 emissions, and pesticide tracking.
+                    </p>
+                    <div class="hero-cta animate-on-scroll">
+                        <a href="register.html" class="btn btn-primary">Get Started for Free</a>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <img src="https://s1.feedly.com/marketing/_next/static/chunks/images/ai-feeds.f2fd6d72_640.png" alt="AgriMind AI Illustration">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Affiliations Section -->
+    <section class="affiliations">
+        <div class="container">
+            <h2 class="animate-on-scroll">Our Trusted Partners</h2>
+            <p class="animate-on-scroll">
+                We collaborate with leading agricultural companies to bring you the best tools and insights for sustainable farming.
+            </p>
+            <div class="carousel">
+                <div class="carousel-track">
+                    <img src="https://pbs.twimg.com/profile_images/1637457431264362496/uo1nbgQ1_400x400.jpg" alt="John Deere Logo">
+                    <img src="https://www.agriculture.com/thmb/eIItNBsfYqgbeaKbybJOAV6jzAM=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/monsanto-624c5ed1c8294ff18fc44e6ced4620c3.jpg" alt="Monsanto Logo">
+                    <img src="https://www.nurserymag.com/remote/aHR0cHM6Ly9naWVjZG4uYmxvYi5jb3JlLndpbmRvd3MubmV0L2ZpbGV1cGxvYWRzL2ltYWdlLzIwMjQvMDYvMjUvc3luZ2VudGEuanBn.ZI8gYkvJsqY.jpg?format=webp" alt="Syngenta Logo">
+                    <img src="https://d2c0db5b8fb27c1c9887-9b32efc83a6b298bb22e7a1df0837426.ssl.cf2.rackcdn.com/19403222-cargill-logo-1006x604.png" alt="Cargill Logo">
+                    <img src="https://talkbusiness.net/wp-content/uploads/2024/02/tysonfoodslogonew2024.jpg" alt="Tyson Foods Logo">
+                    <img src="https://acp-assets.sfo3.cdn.digitaloceanspaces.com/assets/images/article_images/5F35BB91-4332-412F-AAD7-ABAF5CC7771F.webp" alt="Vermeer Logo">
+                    <img src="https://pbs.twimg.com/profile_images/1637457431264362496/uo1nbgQ1_400x400.jpg" alt="John Deere Logo">
+                    <img src="https://www.agriculture.com/thmb/eIItNBsfYqgbeaKbybJOAV6jzAM=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/monsanto-624c5ed1c8294ff18fc44e6ced4620c3.jpg" alt="Monsanto Logo">
+                    <img src="https://www.nurserymag.com/remote/aHR0cHM6Ly9naWVjZG4uYmxvYi5jb3JlLndpbmRvd3MubmV0L2ZpbGV1cGxvYWRzL2ltYWdlLzIwMjQvMDYvMjUvc3luZ2VudGEuanBn.ZI8gYkvJsqY.jpg?format=webp" alt="Syngenta Logo">
+                    <img src="https://d2c0db5b8fb27c1c9887-9b32efc83a6b298bb22e7a1df0837426.ssl.cf2.rackcdn.com/19403222-cargill-logo-1006x604.png" alt="Cargill Logo">
+                    <img src="https://talkbusiness.net/wp-content/uploads/2024/02/tysonfoodslogonew2024.jpg" alt="Tyson Foods Logo">
+                    <img src="https://acp-assets.sfo3.cdn.digitaloceanspaces.com/assets/images/article_images/5F35BB91-4332-412F-AAD7-ABAF5CC7771F.webp" alt="Vermeer Logo">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2 class="animate-on-scroll">Why AgriMind AI is Your Farming Solution</h2>
+            <p class="animate-on-scroll">
+                Leverage AI to track and optimize key sustainability and efficiency metrics, helping your farm thrive while reducing environmental impact.
+            </p>
+            <div class="feature-grid">
+                <div class="feature-card animate-on-scroll">
+                    <i class="fas fa-tint"></i>
+                    <h3>Track Water Usage</h3>
+                    <p>Monitor and optimize water consumption with AI-driven insights to ensure sustainable irrigation practices.</p>
+                    <p><strong>Bonus:</strong> Get real-time alerts for overuse and inefficiency.</p>
+                </div>
+                <div class="feature-card animate-on-scroll">
+                    <i class="fas fa-cloud"></i>
+                    <h3>Measure CO2 Emissions</h3>
+                    <p>Track your farm’s carbon footprint and receive recommendations to reduce emissions and improve sustainability.</p>
+                    <p><strong>Pro Tip:</strong> Integrate with local weather data for better planning.</p>
+                </div>
+                <div class="feature-card animate-on-scroll">
+                    <i class="fas fa-spray-can"></i>
+                    <h3>Pesticide Tracking</h3>
+                    <p>Record pesticide usage and get AI suggestions for safer, eco-friendly alternatives to protect your crops and the environment.</p>
+                    <p><strong>Feature:</strong> Set usage limits and receive compliance alerts.</p>
+                </div>
+                <div class="feature-card animate-on-scroll">
+                    <i class="fas fa-seedling"></i>
+                    <h3>Optimize Crop Yields</h3>
+                    <p>Use AI to analyze soil health and crop data, ensuring maximum productivity with minimal resources.</p>
+                    <p><strong>Exclusive:</strong> Predictive analytics for yield forecasting.</p>
+                </div>
+                <div class="feature-card animate-on-scroll">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Analyze Efficiency Metrics</h3>
+                    <p>Gain insights into labor, energy, and resource efficiency to streamline operations and reduce costs.</p>
+                    <p><strong>Pro Feature:</strong> Export reports for detailed analysis.</p>
+                </div>
+                <div class="feature-card animate-on-scroll">
+                    <i class="fas fa-shield-alt"></i>
+                    <h3>Secure Data Management</h3>
+                    <p>Your farm data is protected with top-tier encryption and privacy-first policies.</p>
+                    <p><strong>Guarantee:</strong> We never share your data with third parties.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials">
+        <div class="container">
+            <h2 class="animate-on-scroll">Trusted by Farmers Worldwide</h2>
+            <p class="animate-on-scroll">
+                From small farms to large agribusinesses, AgriMind AI is helping farmers achieve sustainability and efficiency goals. Hear what our users have to say.
+            </p>
+            <div class="testimonial-grid">
+                <div class="testimonial-card animate-on-scroll">
+                    <i class="fas fa-user"></i>
+                    <div class="stars">★★★★★</div>
+                    <p>"AgriMind AI has transformed how I manage water usage. I’ve reduced waste by 30% while maintaining crop health!"</p>
+                    <h4>User A</h4>
+                    <span>Organic Farmer</span>
+                </div>
+                <div class="testimonial-card animate-on-scroll">
+                    <i class="fas fa-user"></i>
+                    <div class="stars">★★★★★</div>
+                    <p>"Tracking CO2 emissions with AgriMind AI helped me adopt greener practices. My farm is now carbon-neutral!"</p>
+                    <h4>User B</h4>
+                    <span>Agribusiness Owner</span>
+                </div>
+                <div class="testimonial-card animate-on-scroll">
+                    <i class="fas fa-user"></i>
+                    <div class="stars">★★★★★</div>
+                    <p>"The pesticide tracking feature is a game-changer. I’ve switched to safer alternatives, thanks to AgriMind AI’s recommendations."</p>
+                    <h4>User C</h4>
+                    <span>Family Farmer</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq">
+        <div class="container">
+            <h2 class="animate-on-scroll">Frequently Asked Questions</h2>
+            <p class="animate-on-scroll">
+                Got questions? We’ve got answers. Explore common queries about using AgriMind AI to track and optimize your farm’s sustainability metrics.
+            </p>
+            <div class="faq-list">
+                <div class="faq-item animate-on-scroll">
+                    <div class="faq-question">What is AgriMind AI, and how does it work?</div>
+                    <div class="faq-answer">
+                        <p>AgriMind AI is an AI-powered platform that helps farmers track, record, and plan sustainability and efficiency metrics like water usage, CO2 emissions, and pesticide tracking. It uses AI to provide actionable insights and recommendations.</p>
+                    </div>
+                </div>
+                <div class="faq-item animate-on-scroll">
+                    <div class="faq-question">Is AgriMind AI free to use?</div>
+                    <div class="faq-answer">
+                        <p>AgriMind AI offers a free plan with core tracking features. Premium plans unlock advanced AI analytics, integrations, and predictive tools.</p>
+                    </div>
+                </div>
+                <div class="faq-item animate-on-scroll">
+                    <div class="faq-question">Can I use AgriMind AI on multiple devices?</div>
+                    <div class="faq-answer">
+                        <p>Yes! AgriMind AI syncs seamlessly across web, iOS, and Android devices, so you can manage your farm data anywhere, anytime.</p>
+                    </div>
+                </div>
+                <div class="faq-item animate-on-scroll">
+                    <div class="faq-question">How does AgriMind AI’s AI help me?</div>
+                    <div class="faq-answer">
+                        <p>Our AI analyzes your farm’s data to provide personalized recommendations, predict trends, and optimize resource usage, helping you farm smarter and more sustainably.</p>
+                    </div>
+                </div>
+                <div class="faq-item animate-on-scroll">
+                    <div class="faq-question">What integrations does AgriMind AI support?</div>
+                    <div class="faq-answer">
+                        <p>AgriMind AI integrates with tools like weather APIs, soil sensors, and farm management software to streamline your workflow.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="container">
+            <h2 class="animate-on-scroll">Join the AgriMind AI Community Today</h2>
+            <p class="animate-on-scroll">
+                Start tracking, planning, and optimizing your farm’s sustainability metrics with AgriMind AI. Sign up now for free and grow smarter.
+            </p>
+            <a href="register.html" class="btn btn-primary animate-on-scroll">Try AgriMind AI Now</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <h4>AgriMind AI</h4>
+                    <p>Transform your farm with AI-powered insights for sustainability and efficiency.</p>
+                    <p>Available on iOS, Android, and web.</p>
+                </div>
+                <div>
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="#">Features</a></li>
+                        <li><a href="#">Pricing</a></li>
+                        <li><a href="#">Integrations</a></li>
+                        <li><a href="#">Mobile Apps</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Press</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Contact Us</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            <p class="footer-copy">© 2025 AgriMind AI. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Scroll animations with Intersection Observer
+        const observerOptions = {
+            root: null,
+            threshold: 0.2
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.animate-on-scroll').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // FAQ accordion toggle
+        document.querySelectorAll('.faq-question').forEach(question => {
+            question.addEventListener('click', () => {
+                const faqItem = question.parentElement;
+                const isActive = faqItem.classList.contains('active');
+
+                document.querySelectorAll('.faq-item').forEach(item => {
+                    item.classList.remove('active');
+                    item.querySelector('.faq-answer').style.maxHeight = '0';
+                    item.querySelector('.faq-answer').style.padding = '0 20px';
+                });
+
+                if (!isActive) {
+                    faqItem.classList.add('active');
+                    const answer = faqItem.querySelector('.faq-answer');
+                    answer.style.maxHeight = answer.scrollHeight + 'px';
+                    answer.style.padding = '20px';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
