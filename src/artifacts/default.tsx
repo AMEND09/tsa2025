@@ -1686,7 +1686,7 @@ const DefaultComponent = (): React.ReactNode => {
               <div className="flex items-center gap-4">
                 <img 
                   src="./logo.svg" 
-                  alt="EcoSprout" 
+                  alt="AgriMind AI" 
                   className="h-12 w-12"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
@@ -1696,7 +1696,7 @@ const DefaultComponent = (): React.ReactNode => {
                   }} 
                 />
                 <div>
-                  <h1 className="text-3xl font-bold">EcoSprout</h1>
+                  <h1 className="text-3xl font-bold">AgriMind AI</h1>
                   <p className="text-gray-500">Manage your farm operations sustainably</p>
                 </div>
               </div>
@@ -2657,7 +2657,7 @@ const DefaultComponent = (): React.ReactNode => {
             <CardHeader className="text-center">
               <img 
                 src="./logo.svg" 
-                alt="EcoSprout" 
+                alt="AgriMind AI" 
                 className="h-16 w-16 mx-auto mb-2"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
@@ -2665,7 +2665,7 @@ const DefaultComponent = (): React.ReactNode => {
                   target.src = "/logo.svg";
                 }}
               />
-              <CardTitle className="text-2xl font-bold">Welcome to EcoSprout</CardTitle>
+              <CardTitle className="text-2xl font-bold">Welcome to AgriMind AI</CardTitle>
               <p className="text-gray-500">Login or register to manage your farm operations</p>
             </CardHeader>
             <CardContent className="space-y-4">
