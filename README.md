@@ -1,4 +1,4 @@
-# 🌾 EcoSprout
+# 🌾 AgriMind AI
 
 A comprehensive, AI-powered farm management dashboard to help agricultural professionals manage fields, resources, sustainability, livestock, and reporting—all in one place.
 
@@ -28,7 +28,7 @@ A comprehensive, AI-powered farm management dashboard to help agricultural profe
 
 ## 🎯 Overview
 
-EcoSprout lets you:
+AgriMind AI lets you:
 - Optimize farm operations with data-driven insights
 - Track sustainability and efficiency metrics (water, carbon, fertilizer, pesticides, labor, and more)
 - Plan, record, and analyze all aspects of farm management
@@ -149,7 +149,7 @@ For full commit history and the latest changes, see:
    ```
 
 **Try it online:**  
-[EcoSprout Web App](https://amend09.github.io/farmerapp/)
+[AgriMind AI Web App](https://amend09.github.io/farmerapp/)
 
 ---
 
@@ -158,7 +158,7 @@ For full commit history and the latest changes, see:
 - **Frontend:** React 18 + TypeScript, Tailwind CSS, shadcn/ui, Lucide Icons, Recharts
 - **State/Data:** React Hooks, data storage abstraction, Open-Meteo API
 - **Testing/Dev:** Vite, Jest, GitHub Pages
-- **Backend:** Python (early support, expanding soon)
+- **Backend:** Python (Django - early support, expanding soon)
 
 ---
 
@@ -189,15 +189,29 @@ For full commit history and the latest changes, see:
 
 ## 🔧 Development
 
+The frontend source code is primarily located in the `src/` directory:
 ```
 src/
-├── artifacts/         # Main app component
-├── components/        # UI and reusable components
-│   └── ui/
-├── styles/            # Component and global styles
-│   └── tabs.css
-└── index.css
+├── artifacts/         # Core application logic, types, and feature-specific components
+│   ├── components/    # Custom React components for specific features (TaskManager, LoginPage, etc.)
+│   ├── models/        # Data models (e.g., sustainability.ts)
+│   ├── default.tsx    # Main orchestrating component
+│   ├── types.ts       # Core TypeScript type definitions
+│   └── utils.ts       # Utility functions (calculations, UI helpers)
+├── components/        # Reusable UI components
+│   ├── ui/            # shadcn/ui components (Alert, Badge, Card, Form, Tabs)
+│   └── layout.tsx     # Main layout component
+├── hooks/             # Custom React hooks
+├── lib/               # Utility functions and libraries (e.g., clsx, tailwind-merge)
+├── pages/             # Page-level components (e.g., Home.tsx)
+├── router/            # Routing configuration
+├── styles/            # Styling-related files (e.g., theme.ts)
+├── typings/           # Custom TypeScript type definitions
+├── App.tsx            # Main application layout component
+├── index.css          # Global stylesheets, Tailwind CSS setup
+└── main.tsx           # Entry point of the React application
 ```
+The Django backend code is in the `backend/backend/` directory. For more details on the overall file structure, refer to [DOCUMENTATION.md](DOCUMENTATION.md).
 
 ---
 
