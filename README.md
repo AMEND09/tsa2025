@@ -1,5 +1,7 @@
-![logo](https://github.com/user-attachments/assets/13f974b8-1848-4b73-adf8-0c8a9c2d9a7c)
-#  AgriMind AI 
+<div style="display: flex; flex-direction: row; align-items: left;">
+  <img src="https://github.com/user-attachments/assets/13f974b8-1848-4b73-adf8-0c8a9c2d9a7c" width="80px" alt="logo" style="margin-right: 10px;">
+  <h1>AgriMind AI</h1>
+</div>
 A comprehensive, AI-powered farm management dashboard to help agricultural professionals manage fields, resources, sustainability, livestock, and reporting—all in one place.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
