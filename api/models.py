@@ -1,6 +1,7 @@
 # Create your models here.
 # your_app/models.py
 from django.db import models
+from django.contrib.auth.models import User # Standard User model
 
 class Farm(models.Model):
     id = models.AutoField(primary_key=True)
@@ -169,3 +170,15 @@ class Livestock(models.Model):
 
     def __str__(self):
         return f"{self.type} ({self.count})"
+
+class UserLocalStorage(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='local_storage_data') # Changed related_name to avoid potential clash
+    data = models.JSONField()
+    last_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"LocalStorage for {self.user.username}"
+
+    class Meta:
+        db_table = 'user_local_storage'
+        verbose_name_plural = "User Local Storage Data"

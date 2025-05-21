@@ -49,6 +49,7 @@ export class ApiService {
     if (data.token) {
       localStorage.setItem('authToken', data.token); // Store token
       localStorage.setItem('currentUser', JSON.stringify({ username: data.username, email: data.email, id: data.user_id }));
+      await ApiService.saveLocalStorageToBackend(); // Sync after login
     }
     return data;
   }
@@ -59,13 +60,15 @@ export class ApiService {
      if (data.token) {
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('currentUser', JSON.stringify({ username: data.username, email: data.email, id: data.user_id }));
+      await ApiService.saveLocalStorageToBackend(); // Sync after registration
     }
     return data;
   }
 
-  static logout(): void {
+  static async logout(): Promise<void> { // Changed to async
     localStorage.removeItem('authToken');
     localStorage.removeItem('currentUser');
+    await ApiService.saveLocalStorageToBackend(); // Sync after logout
     // Potentially call a backend logout endpoint if it invalidates tokens server-side
   }
   
@@ -109,6 +112,48 @@ export class ApiService {
     return request<T>('plans/', 'POST', planData);
   }
   
+  // Method to save the entire localStorage to the backend
+  static async saveLocalStorageToBackend(): Promise<void> {
+    if (!ApiService.isLoggedIn()) {
+      console.log('User not logged in. Skipping localStorage sync to backend.');
+      return;
+    }
+    const localStorageSnapshot: Record<string, string | null> = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        localStorageSnapshot[key] = localStorage.getItem(key);
+      }
+    }
+    try {
+      // Assuming a new endpoint '/sync/localstorage/save/' that accepts a POST request
+      // with the localStorage data.
+      await request<void>('sync/localstorage/save/', 'POST', localStorageSnapshot);
+      console.log('LocalStorage snapshot saved to backend.');
+    } catch (error) {
+      console.error('Failed to save localStorage snapshot to backend. Data is still saved locally.', error);
+      // The error is caught, so the application continues to run with local changes.
+    }
+  }
+
+  // Method to load localStorage data from the backend
+  static async loadLocalStorageFromBackend(): Promise<void> {
+    // Assuming a new endpoint '/sync/localstorage/load/' that returns the localStorage data.
+    const backendData = await request<Record<string, string>>('sync/localstorage/load/', 'GET');
+    
+    if (backendData) {
+      localStorage.clear(); // Clear existing localStorage before populating
+      for (const key in backendData) {
+        if (Object.prototype.hasOwnProperty.call(backendData, key)) {
+          localStorage.setItem(key, backendData[key]);
+        }
+      }
+      console.log('LocalStorage loaded from backend.');
+    } else {
+      console.log('No localStorage data received from backend.');
+    }
+  }
+
   // ... other methods for setData, removeData would now be addEntity, updateEntity, deleteEntity
 }
 
@@ -118,8 +163,14 @@ export class DataStorage {
     return !!localStorage.getItem('walkthroughCompleted');
   }
 
-  static markWalkthroughCompleted(): void {
+  static async markWalkthroughCompleted(): Promise<void> { // Changed to async
     localStorage.setItem('walkthroughCompleted', 'true');
+    try {
+      await ApiService.saveLocalStorageToBackend();
+    } catch (error) {
+      console.error('Failed to sync walkthrough completion:', error);
+      // Optionally, handle the error e.g., by queuing the sync
+    }
   }
    // Keep setData and getData for non-API related local storage if needed
   static getData<T>(key: string, defaultValue: T): T {
@@ -133,20 +184,24 @@ export class DataStorage {
     }
   }
 
-  static setData(key: string, data: any): void {
+  static async setData(key: string, data: any): Promise<void> { // Changed to async
     console.log(`DataStorage: Setting data for key '${key}'`, data);
     try {
       localStorage.setItem(key, JSON.stringify(data));
+      await ApiService.saveLocalStorageToBackend();
     } catch (error) {
-      console.error(`Error storing data for key ${key}:`, error);
+      console.error(`Error storing data for key ${key} or syncing:`, error);
+      // Optionally, handle the error
     }
   }
-   static removeData(key: string): void {
+   static async removeData(key: string): Promise<void> { // Changed to async
     console.log(`DataStorage: Removing data for key '${key}'`);
     try {
       localStorage.removeItem(key);
+      await ApiService.saveLocalStorageToBackend();
     } catch (error) {
-      console.error(`Error removing data for key ${key}:`, error);
+      console.error(`Error removing data for key ${key} or syncing:`, error);
+      // Optionally, handle the error
     }
   }
 }

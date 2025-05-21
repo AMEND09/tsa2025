@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',  # Add this for TokenAuthentication
     'corsheaders',
     'api',
 ]
@@ -94,7 +95,6 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 
-
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
@@ -138,7 +138,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',  # Add this
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        # If you primarily use JWT, you might place JWTAuthentication first,
+        # but TokenAuthentication is needed for `Token ${token}` headers.
     ],
 }
 

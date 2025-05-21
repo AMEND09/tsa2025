@@ -3,7 +3,7 @@ from rest_framework import serializers
 from .models import (
     Farm, WaterHistory, FertilizerHistory, HarvestHistory, Task, Issue,
     CropPlanEvent, PlanItem, FuelRecord, SoilRecord, EmissionSource,
-    SequestrationActivity, EnergyRecord, Livestock
+    SequestrationActivity, EnergyRecord, Livestock, UserLocalStorage
 )
 
 class WaterHistorySerializer(serializers.ModelSerializer):
@@ -126,3 +126,9 @@ class ExportDataSerializer(serializers.Serializer):
     sequestration_activities = SequestrationActivitySerializer(many=True)
     energy_records = EnergyRecordSerializer(many=True)
     livestock = LivestockSerializer(many=True)
+
+class UserLocalStorageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserLocalStorage
+        fields = ['user', 'data', 'last_updated']
+        read_only_fields = ['user', 'last_updated']
