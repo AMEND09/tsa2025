@@ -1,7 +1,9 @@
 # FarmerApp Documentation
 
 **Version:** 1.0.0 (Last Updated: 2025-05-21)
+
 **Repository:** [AMEND09/farmerapp](https://github.com/AMEND09/farmerapp)
+
 **Authors:** Aditya Mendiratta & Rahbe Abass
 
 ## 1. Introduction
