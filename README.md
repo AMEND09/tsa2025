@@ -4,7 +4,7 @@
 </div>
 A comprehensive, AI-powered farm management dashboard to help agricultural professionals manage fields, resources, sustainability, livestock, and reporting—all in one place.
 
-Try out the demo at https://amend09.github.io/farmerapp/, this demo is just the frontend the backend is not included in the demo.
+Try out the demo at https://amend09.github.io/AgriMind.ai/, this demo is just the frontend the backend is not included in the demo.
 
 For more detailed documentation, look at the DOCUMENTATION.md file.
 
@@ -129,7 +129,7 @@ AgriMind AI lets you:
 - Enhanced soil health and pesticide tracking modules
 
 For full commit history and the latest changes, see:  
-[GitHub Commits](https://github.com/AMEND09/farmerapp/commits?per_page=20&sort=updated)
+[GitHub Commits](https://github.com/AMEND09/AgriMind.ai/commits?per_page=20&sort=updated)
 
 ---
 
@@ -137,8 +137,8 @@ For full commit history and the latest changes, see:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/AMEND09/farmerapp.git
-   cd farmerapp
+   git clone https://github.com/AMEND09/AgriMind.ai.git
+   cd AgriMind.ai
    ```
 2. **Install dependencies**
    ```bash
@@ -154,7 +154,7 @@ For full commit history and the latest changes, see:
    ```
 
 **Try it online:**  
-[AgriMind AI Web App](https://amend09.github.io/farmerapp/)
+[AgriMind AI Web App](https://amend09.github.io/AgriMind.ai/)
 
 ---
 
