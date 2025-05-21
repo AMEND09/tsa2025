@@ -30,7 +30,7 @@ export default defineConfig({
             type: 'image/png'
           }
         ],
-        start_url: '/farmerapp/',
+        start_url: '/AgriMind.ai/',
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#000000'
