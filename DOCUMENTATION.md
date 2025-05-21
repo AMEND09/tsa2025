@@ -1,14 +1,14 @@
-# FarmerApp Documentation
+# AgriMind AI Documentation
 
 **Version:** 1.0.0 (Last Updated: 2025-05-21)
 
-**Repository:** [AMEND09/farmerapp](https://github.com/AMEND09/farmerapp)
+**Repository:** [AMEND09/farmerapp](https://github.com/AMEND09/AgriMind AI)
 
 **Authors:** Aditya Mendiratta & Rahbe Abass
 
 ## 1. Introduction
 
-FarmerApp is a sustainable farm management software designed to provide elegant reporting and an efficient user experience. This document provides an in-depth overview of the FarmerApp project, its architecture, file structure, and key components. The application features a React frontend (TypeScript, Vite, Tailwind CSS) and a Django backend (Python).
+AgriMind AI is a sustainable farm management software designed to provide elegant reporting and an efficient user experience. This document provides an in-depth overview of the AgriMind AI project, its architecture, file structure, and key components. The application features a React frontend (TypeScript, Vite, Tailwind CSS) and a Django backend (Python).
 
 ## 2. Technology Stack
 
@@ -33,7 +33,7 @@ FarmerApp is a sustainable farm management software designed to provide elegant 
 ## 3. File Structure
 
 ```
-farmerapp/
+AgriMind AI/
 ├── .github/
 │   └── workflows/              # GitHub Actions CI/CD workflow definitions
 ├── backend/
@@ -141,7 +141,7 @@ farmerapp/
 
 ### 3.3 `backend/` - Django Backend
 
-This directory contains the Django project for FarmerApp's backend.
+This directory contains the Django project for AgriMind AI's backend.
 
 *   **`backend/manage.py`**:
     *   Django's command-line utility for administrative tasks. Used to run the development server, create database migrations, manage users, and other Django-specific operations.
@@ -228,7 +228,7 @@ Vite-specific type declarations.
 
 #### 3.5.10 `src/artifacts/` - Core Application Features & Custom Components
 
-This directory appears to house the primary logic, data structures, and more complex, feature-specific components of the FarmerApp frontend.
+This directory appears to house the primary logic, data structures, and more complex, feature-specific components of the AgriMind AI frontend.
 
 *   **`types.ts`**:
     *   Defines a wide range of TypeScript interfaces and types that model the application's data. This is a crucial file for understanding the data flow and structure.
@@ -283,8 +283,8 @@ This directory appears to house the primary logic, data structures, and more com
     *   pip (Python package installer)
 2.  **Clone the repository:**
     ```bash
-    git clone https://github.com/AMEND09/farmerapp.git
-    cd farmerapp
+    git clone https://github.com/AMEND09/AgriMind AI.git
+    cd AgriMind AI
     ```
 3.  **Frontend Setup:**
     ```bash
