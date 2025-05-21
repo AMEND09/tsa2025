@@ -2,7 +2,11 @@
   <img src="https://github.com/user-attachments/assets/13f974b8-1848-4b73-adf8-0c8a9c2d9a7c" width="80px" alt="logo" style="margin-right: 10px;">
   <h1>AgriMind AI</h1>
 </div>
-A comprehensive, AI-powered farm management dashboard to help agricultural professionals manage fields, resources, sustainability, livestock, and reporting—all in one place. Try out the demo at https://amend09.github.io/farmerapp/, this demo is just the frontend, for the backend you will need to host it yourself.
+A comprehensive, AI-powered farm management dashboard to help agricultural professionals manage fields, resources, sustainability, livestock, and reporting—all in one place.
+
+Try out the demo at https://amend09.github.io/farmerapp/, this demo is just the frontend the backend is not included in the demo.
+
+For more detailed documentation, look at the DOCUMENTATION.md file.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![React](https://img.shields.io/badge/React-18.0.0-61dafb.svg)
@@ -156,14 +160,18 @@ For full commit history and the latest changes, see:
 
 ## 🛠️ Technical Stack
 
+For more detailed documentation, look at the DOCUMENTATION.md file.
+
 - **Frontend:** React 18 + TypeScript, Tailwind CSS, shadcn/ui, Lucide Icons, Recharts
 - **State/Data:** React Hooks, data storage abstraction, Open-Meteo API
 - **Testing/Dev:** Vite, Jest, GitHub Pages
-- **Backend:** Python (Django - early support, expanding soon)
+- **Backend:** Python (Django)
 
 ---
 
 ## 🔧 Development
+
+For more detailed documentation, look at the DOCUMENTATION.md file.
 
 The frontend source code is primarily located in the `src/` directory:
 ```
