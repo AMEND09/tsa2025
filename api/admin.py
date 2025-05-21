@@ -6,7 +6,7 @@ from django.contrib import admin
 from .models import (
     Farm, WaterHistory, FertilizerHistory, HarvestHistory, Task, Issue,
     CropPlanEvent, PlanItem, FuelRecord, SoilRecord, EmissionSource,
-    SequestrationActivity, EnergyRecord, Livestock
+    SequestrationActivity, EnergyRecord, Livestock, UserLocalStorage # Added UserLocalStorage
 )
 
 # Inlines for related models
@@ -123,3 +123,9 @@ class LivestockAdmin(admin.ModelAdmin):
     search_fields = ('type',)
     list_filter = ('type',)
     list_select_related = ('farm',)
+
+@admin.register(UserLocalStorage)
+class UserLocalStorageAdmin(admin.ModelAdmin):
+    list_display = ('user', 'last_updated')
+    search_fields = ('user__username',)
+    readonly_fields = ('last_updated',)
