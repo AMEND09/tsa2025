@@ -16,8 +16,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Farmer App',
-        short_name: 'FarmerApp',
+        name: 'AgriMind.ai',
+        short_name: 'AgriMind',
         icons: [
           {
             src: 'icons/icon-192x192.png',
@@ -30,7 +30,7 @@ export default defineConfig({
             type: 'image/png'
           }
         ],
-        start_url: '/AgriMind.ai/',
+        start_url: '/LandingPage/',
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#000000'
@@ -46,5 +46,5 @@ export default defineConfig({
   build: {
     outDir: 'dist', // Ensure this matches the directory in the deploy script
   },
-  base: '/farmerapp/', // Update this to match your GitHub repository name
+  base: '/AgriMind.ai/', 
 });
