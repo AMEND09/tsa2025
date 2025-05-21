@@ -15,18 +15,18 @@ AgriMind AI is a sustainable farm management software designed to provide elegan
 *   **Frontend:**
     *   **Framework/Library:** React (with TypeScript)
     *   **Build Tool:** Vite
-    *   **Routing:** `react-router-dom` (potentially with `vite-plugin-pages` for file-system based routing)
+    *   **Routing:** `react-router-dom`
     *   **Styling:** Tailwind CSS, global CSS (`src/index.css`), custom theming (`src/styles/theme.ts`)
     *   **UI Components:**
         *   shadcn/ui (built on Radix UI primitives like `@radix-ui/react-tabs`, `@radix-ui/react-label`, `@radix-ui/react-slot`)
         *   Custom components in `src/artifacts/components/`
-    *   **State Management:** React Context API (inferred from `useFormContext`, `createContext`) and component state.
+    *   **State Management:** React Context API (utilized via `useFormContext`, `createContext`) and component state.
     *   **Form Handling:** `react-hook-form`
     *   **Utility Libraries:** `class-variance-authority` (for UI variants), `clsx`, `tailwind-merge`
     *   **Linting:** ESLint
 *   **Backend:**
     *   **Framework:** Django (Python)
-    *   **Database:** (To be specified, uses Django ORM)
+    *   **Database:** Utilizes the Django ORM; the specific database engine is configured in Django settings.
 *   **Version Control:** Git
 *   **Hosting/CI/CD:** GitHub, GitHub Actions
 
@@ -67,7 +67,7 @@ AgriMind AI/
 │   │   │   └── Walkthrough.tsx
 │   │   ├── models/             # Data models, particularly for sustainability
 │   │   │   └── sustainability.ts
-│   │   ├── default.tsx         # (Likely) A major component orchestrating UI and logic
+│   │   ├── default.tsx         # A major component orchestrating UI and logic
 │   │   ├── types.ts            # Core TypeScript type definitions for the app
 │   │   └── utils.ts            # Utility functions, esp. for calculations
 │   ├── components/               # Reusable UI components (some from shadcn/ui)
@@ -84,7 +84,7 @@ AgriMind AI/
 │   ├── pages/                    # Page-level components
 │   │   └── Home.tsx              # Home page component
 │   ├── router/                   # Routing configuration
-│   │   └── routes.ts             # (Inferred) Defines application routes
+│   │   └── routes.ts             # Defines application routes
 │   ├── styles/                   # Styling-related files
 │   │   └── theme.ts              # Custom theme definitions
 │   ├── typings/                  # Custom TypeScript type definitions
@@ -148,20 +148,20 @@ This directory contains the Django project for AgriMind AI's backend.
     *   Sets `DJANGO_SETTINGS_MODULE` to `backend.settings`.
 
 *   **`backend/backend/` (Project Configuration Directory)**:
-    *   **`settings.py`**: Contains all the configuration for the Django project, including database settings, installed apps (like the `api` app), middleware, template configurations, static files, etc.
-    *   **`urls.py`**: The main URL configuration for the project. It includes routes to different parts of the application, likely delegating API-specific URLs to the `api` app's `urls.py` (not present in the provided files, but a standard practice).
+    *   **`settings.py`**: Contains all the configuration for the Django project, including database settings, installed apps (such as the `api` app), middleware, template configurations, and static files.
+    *   **`urls.py`**: The main URL configuration for the project. It defines project-level URL routing, directing requests to appropriate views, including those within the `api` app.
     *   **`wsgi.py` / `asgi.py`**: Entry points for WSGI/ASGI compatible web servers to serve the Django application.
     *   **`__pycache__/`**: Contains compiled Python bytecode for faster execution of project configuration modules.
 
-*   **`backend/backend/api/` (Django App: `api`)**: This directory represents a Django application named `api`, which likely handles the application's API logic.
+*   **`backend/backend/api/` (Django App: `api`)**: This directory represents a Django application named `api`, which handles the application's API logic.
     *   **`apps.py` (`ApiConfig`)**:
         *   Configuration class for the `api` Django app.
         *   Sets `default_auto_field` to `django.db.models.BigAutoField` for primary keys.
         *   Specifies the app name as `api`.
     *   **`models.py`**:
-        *   Defines the database models (schema) for the `api` app using Django's ORM. This is where tables and their fields like `Farm`, `Crop`, `Task`, etc., would be defined as Python classes. Currently empty, indicating models are yet to be defined here or are defined elsewhere.
+        *   Defines the database models (schema) for the `api` app using Django's ORM. Database tables and their fields (e.g., `Farm`, `Crop`, `Task`) are defined here as Python classes. The current version of this file is empty, awaiting model definitions.
     *   **`views.py`**:
-        *   Contains the logic for handling HTTP requests and returning responses. This is where API endpoints would be implemented (e.g., using Django REST framework or basic Django views). Currently contains a placeholder for creating views.
+        *   Contains the logic for handling HTTP requests and returning responses. API endpoints are implemented here, utilizing Django's view mechanisms or frameworks like Django REST framework. Currently contains a placeholder for creating views.
     *   **`admin.py`**:
         *   Used to register models with Django's built-in admin interface, allowing for easy data management. Currently empty.
     *   **`tests.py`**:
@@ -178,7 +178,7 @@ Static assets served directly by the web server.
 ### 3.5 `src/` - Frontend Application Source
 
 #### 3.5.1 `src/App.tsx`, `src/main.tsx`, `src/index.css`
-Core frontend setup as described previously (React entry, global styles, router setup).
+Core frontend setup: React entry point, global styles, and router initialization.
 
 #### 3.5.2 `src/lib/`
 *   **`utils.ts`**: Contains the `cn` utility function combining `clsx` and `tailwind-merge` for dynamic and conflict-free Tailwind CSS class generation.
@@ -187,10 +187,10 @@ Core frontend setup as described previously (React entry, global styles, router 
 Directory for custom React Hooks.
 
 #### 3.5.4 `src/pages/`
-*   **`Home.tsx`**: Simple home page component.
+*   **`Home.tsx`**: Home page component.
 
 #### 3.5.5 `src/router/`
-Routing configuration (e.g., `routes.ts`).
+*   **`routes.ts`**: Defines application routes.
 
 #### 3.5.6 `src/styles/`
 *   **`theme.ts`**: Custom theme definitions (light/dark modes, colors, accessibility settings).
@@ -204,16 +204,16 @@ Vite-specific type declarations.
 #### 3.5.9 `src/components/` - Reusable UI Components
 
 *   **`layout.tsx`**:
-    *   A simple React functional component that acts as a layout wrapper. It takes `children` as a prop and renders them, providing a basic structure for pages or sections of the application.
+    *   A React functional component that acts as a layout wrapper. It accepts `children` as a prop and renders them, providing a basic structure for application pages or sections.
 
-*   **`ui/` (shadcn/ui Components)**: This directory hosts UI components, likely installed or generated via the `shadcn/ui` CLI. These components are typically built using Radix UI primitives and styled with Tailwind CSS.
+*   **`ui/` (shadcn/ui Components)**: This directory hosts UI components generated via the `shadcn/ui` CLI. These components are built using Radix UI primitives and styled with Tailwind CSS.
     *   **`alert.tsx` (`Alert`, `AlertTitle`, `AlertDescription`)**:
         *   Provides styled alert components for displaying important messages.
-        *   Supports variants like `default` and `destructive`.
+        *   Supports variants including `default` and `destructive`.
         *   Uses `cva` (class-variance-authority) for managing style variants.
     *   **`badge.tsx` (`Badge`, `badgeVariants`)**:
-        *   Renders small badge elements, often used for tags, statuses, or counts.
-        *   Supports variants like `default`, `secondary`, `destructive`, and `outline`.
+        *   Renders small badge elements for tags, statuses, or counts.
+        *   Supports variants including `default`, `secondary`, `destructive`, and `outline`.
         *   Uses `cva` for style variants.
     *   **`card.tsx` (`Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`)**:
         *   A collection of components to build card-based UI elements.
@@ -228,16 +228,16 @@ Vite-specific type declarations.
 
 #### 3.5.10 `src/artifacts/` - Core Application Features & Custom Components
 
-This directory appears to house the primary logic, data structures, and more complex, feature-specific components of the AgriMind AI frontend.
+This directory houses the primary logic, data structures, and complex, feature-specific components of the AgriMind AI frontend.
 
 *   **`types.ts`**:
-    *   Defines a wide range of TypeScript interfaces and types that model the application's data. This is a crucial file for understanding the data flow and structure.
+    *   Defines a wide range of TypeScript interfaces and types that model the application's data. This file is crucial for understanding the data flow and structure.
     *   Key types include: `Farm` (detailed farm information, histories for water, fertilizer, harvest, rotation, soil properties), `WaterUsage`, `WeatherData`, `Task`, `Issue`, `ConfirmDelete`, `CropPlanEvent`, `SustainabilityMetrics` (overallScore, waterEfficiency, organicScore, etc.), `WalkthroughStep`, `Livestock`, `LivestockType`, `ExportData` (for exporting all app data), `AnyHistoryEntry` (a union type for various history log entries), and `PlanItem`.
-    *   These types suggest features around farm management, task tracking, issue reporting, crop planning, sustainability assessment, and livestock management.
+    *   These types define the data structures for features including farm management, task tracking, issue reporting, crop planning, sustainability assessment, and livestock management.
 
 *   **`utils.ts`**:
     *   Contains utility functions, primarily focused on calculations related to sustainability metrics and UI helpers.
-    *   `getPositionForElement`: Calculates positioning for UI elements (likely for the walkthrough).
+    *   `getPositionForElement`: Calculates positioning for UI elements for the walkthrough.
     *   `walkthroughStyles`: CSS for the walkthrough component.
     *   `calculateWaterEfficiency`, `calculateSoilQualityScore`, `calculateOrganicScore`, `calculateHarvestEfficiency`, `calculateRotationScore`: Functions to compute various sustainability scores based on farm data and weather.
     *   `calculateSustainabilityMetrics`, `calculateSustainabilityMetricsWithTrackers`: Aggregate sustainability scores.
@@ -251,19 +251,19 @@ This directory appears to house the primary logic, data structures, and more com
     *   `CarbonEmissionSource`: Records sources of carbon emissions.
     *   `CarbonSequestrationActivity`: Records activities that sequester carbon.
 
-*   **`default.tsx`**: (Content partially provided, inferred functionality)
-    *   This appears to be a large, central React component that likely orchestrates many parts of the application's UI and state.
-    *   Handles state for various features: walkthroughs (`showWalkthrough`), expanded items, plans (`newPlantingPlan`, etc.), login/registration, farms, tasks, issues, livestock.
-    *   Contains handlers for:
-        *   Walkthrough completion and start.
-        *   Adding, updating, and deleting various plan items.
-        *   User authentication (login, register, logout, profile update).
-        *   CRUD operations for Farms, Water Usage, Fertilizer, Harvest, Rotations, Livestock.
-        *   Resolving issues, deleting tasks.
-        *   Data import/export.
-        *   Fetching user location and weather data.
-        *   Managing widget visibility and layout changes.
-    *   Likely renders various sub-components like `Sidebar`, `PlannerView`, `FarmIssues`, `Reports`, etc. (names inferred from handlers).
+*   **`default.tsx`**:
+    *   A large central React component that orchestrates the UI by integrating various application components.
+    *   Manages state for features including: walkthroughs (`showWalkthrough`), expanded UI items, planning activities (e.g., `newPlantingPlan`), user authentication, farm data, tasks, issues, and livestock information.
+    *   Implements handlers for core application functionalities:
+        *   Walkthrough initiation and completion.
+        *   Creation, modification, and deletion of plan items.
+        *   User authentication processes (login, registration, logout, profile updates).
+        *   CRUD (Create, Read, Update, Delete) operations for Farms, Water Usage, Fertilizer, Harvest data, Crop Rotations, and Livestock.
+        *   Issue resolution and task deletion.
+        *   Data import and export functionalities.
+        *   Fetching user location and corresponding weather data.
+        *   Control of widget visibility and dynamic layout adjustments.
+    *   This component renders and coordinates the user interface elements corresponding to the managed state and handlers.
 
 *   **`components/` (within `src/artifacts/`)**: Contains more specialized, feature-rich React components.
     *   **`CropFilter.tsx`**: A component that allows users to filter a list of farms based on the crop type. It dynamically generates filter options from the available crops.
@@ -277,9 +277,9 @@ This directory appears to house the primary logic, data structures, and more com
 ## 4. Setup and Running the Project
 
 1.  **Prerequisites:**
-    *   Node.js (e.g., >= 18.x)
+    *   Node.js (version 18.x or newer)
     *   npm or yarn
-    *   Python (e.g., >= 3.8)
+    *   Python (version 3.8 or newer)
     *   pip (Python package installer)
 2.  **Clone the repository:**
     ```bash
@@ -295,23 +295,23 @@ This directory appears to house the primary logic, data structures, and more com
 4.  **Backend Setup (Django):**
     ```bash
     cd backend/backend
-    python -m venv venv  # Create a virtual environment (recommended)
+    python -m venv venv  # Create a virtual environment
     source venv/bin/activate  # On Windows: venv\Scripts\activate
-    pip install -r requirements.txt # (Assuming a requirements.txt will be created)
-                                     # Alternatively, pip install Django djangorestframework etc.
+    pip install -r requirements.txt # A requirements.txt file detailing all backend dependencies is required.
+                                     # Alternatively, install core dependencies: pip install Django djangorestframework
     python manage.py migrate # Apply database migrations
     cd ../..
     ```
 5.  **Environment Variables:**
-    *   Frontend: Create a `.env` file in the root based on `.env.example` (if provided).
-    *   Backend: Configure Django settings in `backend/backend/backend/settings.py` or use environment variables as defined there.
+    *   Frontend: Create a `.env` file in the root directory for environment-specific configurations. Refer to `.env.example` if available for structure and required variables.
+    *   Backend: Configure Django settings in `backend/backend/backend/settings.py` or use environment variables as defined therein.
 6.  **Run the development server (frontend):**
     ```bash
     npm run dev
     # or
     # yarn dev
     ```
-    (Usually runs on `http://localhost:5173`)
+    (The frontend development server will be accessible, typically at `http://localhost:5173`)
 7.  **Run the backend server (Django):**
     ```bash
     cd backend/backend
@@ -319,5 +319,5 @@ This directory appears to house the primary logic, data structures, and more com
     python manage.py runserver
     cd ../..
     ```
-    (Usually runs on `http://localhost:8000`)
+    (The Django backend server will be accessible, typically at `http://localhost:8000`)
 8.  Open your browser and navigate to the frontend URL.
