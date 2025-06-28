@@ -55,7 +55,6 @@ const LoginPage: React.FC<LoginPageProps> = ({
       return;
     }
 
-    // For demo purposes, we'll accept any login
     onLogin({ username, password });
     
     // Reset form
@@ -167,7 +166,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
               </Button>
               
               <p className="text-center text-xs text-gray-500 pt-2">
-                For demo purposes, any username and password will work
+
               </p>
             </form>
           </TabsContent>
@@ -238,7 +237,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
               </Button>
               
               <p className="text-center text-xs text-gray-500 pt-2">
-                For demo purposes, registration is simulated
+
               </p>
             </form>
           </TabsContent>
