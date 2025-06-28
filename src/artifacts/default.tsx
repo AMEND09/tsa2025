@@ -45,6 +45,7 @@ import WeatherPreview from './components/WeatherPreview';
 import TaskManager from './components/TaskManager';
 import IssueTracker from './components/IssueTracker';
 import HistoryPage from './components/HistoryPage';
+import WaterManagement from './components/WaterManagement';
 import Instructions from './components/Instructions';
 import PlannerDashboard from './components/PlannerDashboard';
 import PlantingPlanForm from './components/PlantingPlanForm';
@@ -2498,58 +2499,16 @@ const DefaultComponent = (): React.ReactNode => {
                 </TabsContent>
 
                 <TabsContent value="water" className="h-full">
-                  <div className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Water Usage Tracker</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="h-[300px]">
-                          {/* Content for Water Management, can reuse parts of HistoryPage or specific components */}
-                          <p>Detailed water usage charts and history will be shown here.</p>
-                           {/* Example: Re-use parts of HistoryPage or create a dedicated WaterManagement component */}
-                           <HistoryPage
+                  <WaterManagement
                     farms={farms}
-                    // Water Usage Props
-                    newWaterUsage={newWaterUsage}
-                    setNewWaterUsage={setNewWaterUsage}
-                    setIsAddingWaterUsage={setIsAddingWaterUsage} // Corrected: Pass setter
-                    isEditingWaterUsage={isEditingWaterUsage}
-                    setIsEditingWaterUsage={setIsEditingWaterUsage}
-                    editingWaterUsage={editingWaterUsage}
-                    setEditingWaterUsage={setEditingWaterUsage}
-                    handleEditWaterUsage={handleEditWaterUsage}
-                    // Fertilizer Props
-                    newFertilizer={newFertilizer}
-                    setNewFertilizer={setNewFertilizer}
-                    setIsAddingFertilizer={setIsAddingFertilizer} // Corrected: Pass setter
-                    isEditingFertilizer={isEditingFertilizer}
-                    setIsEditingFertilizer={setIsEditingFertilizer}
-                    editingFertilizer={editingFertilizer}
-                    setEditingFertilizer={setEditingFertilizer}
-                    handleEditFertilizer={handleEditFertilizer}
-                    // Harvest Props
-                    newHarvest={newHarvest}
-                    setNewHarvest={setNewHarvest}
-                    setIsAddingHarvest={setIsAddingHarvest} // Corrected: Pass setter
-                    isEditingHarvest={isEditingHarvest}
-                    setIsEditingHarvest={setIsEditingHarvest}
-                    editingHarvest={editingHarvest}
-                    setEditingHarvest={setEditingHarvest}
-                    handleEditHarvest={handleEditHarvest}
-                    // Rotation Props
-                    isAddingRotation={isAddingRotation}
-                    setIsAddingRotation={setIsAddingRotation}
-                    newRotation={newRotation}
-                    setNewRotation={setNewRotation}
-                    handleAddRotation={handleAddRotation}
-                    // General
-                    setConfirmDelete={setConfirmDelete}
+                    weatherData={weatherData}
+                    cropFilter={cropFilter}
+                    setCropFilter={setCropFilter}
+                    getFilteredFarms={getFilteredFarms}
+                    setIsAddingWaterUsage={setIsAddingWaterUsage}
+                    setIsAddingIrrigationPlan={setIsAddingIrrigationPlan}
+                    setIsAddingRainwaterPlan={setIsAddingRainwaterPlan}
                   />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
                 </TabsContent>
 
                 <TabsContent value="farms" className="h-full">
