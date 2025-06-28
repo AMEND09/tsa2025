@@ -34,13 +34,8 @@ import {
 // Import LivestockPage, ensure Livestock type is consistently used.
 // If LivestockPage exports its own Livestock type, ensure it's compatible or aliased.
 import LivestockPage from './components/LivestockPage';
-
-
-import {
-  walkthroughStyles,
-  calculateSustainabilityMetricsWithTrackers,
-  getWeatherInfo
-} from './utils';
+import { calculateSustainabilityMetricsWithTrackers, walkthroughStyles, getWeatherInfo } from './utils';
+import { ChatBot } from '../components/ChatBot';
 
 // Import the component files
 import Walkthrough from './components/Walkthrough';
@@ -603,9 +598,9 @@ const DefaultComponent = (): React.ReactNode => {
   };
 
   // Functions for plan handling - called from plan form components
-  const handleAddPlantingPlan = () => handleAddPlanItem('planting', newPlantingPlan);
-  const handleAddFertilizerPlan = () => handleAddPlanItem('fertilizer', newFertilizerPlan);
-  const handleAddPestPlan = () => handleAddPlanItem('pest', newPestPlan);
+  const handleAddPlantingPlan = (e: React.FormEvent) => { e.preventDefault(); handleAddPlanItem('planting', newPlantingPlan); };
+  const handleAddFertilizerPlan = (e: React.FormEvent) => { e.preventDefault(); handleAddPlanItem('fertilizer', newFertilizerPlan); };
+  const handleAddPestPlan = (e: React.FormEvent) => { e.preventDefault(); handleAddPlanItem('pest', newPestPlan); };
   const handleAddIrrigationPlan = (e: React.FormEvent) => { e.preventDefault(); handleAddPlanItem('irrigation', newIrrigationPlan); };
   const handleAddWeatherTaskPlan = (e: React.FormEvent) => { e.preventDefault(); handleAddPlanItem('weatherTask', newWeatherTaskPlan); };
   const handleAddRotationPlan = (e: React.FormEvent) => { e.preventDefault(); handleAddPlanItem('rotation', newRotationPlan); };
@@ -2966,6 +2961,30 @@ const DefaultComponent = (): React.ReactNode => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ChatBot 
+        farmData={{
+          farms,
+          cropPlanEvents,
+          plantingPlans,
+          fertilizerPlans,
+          pestManagementPlans,
+          irrigationPlans,
+          weatherTaskPlans,
+          rotationPlans,
+          rainwaterPlans,
+          livestockList,
+          fuelRecords,
+          soilRecords,
+          emissionSources,
+          sequestrationActivities,
+          energyRecords,
+          sustainabilityMetrics,
+          issues,
+          tasks,
+          weatherData
+        }}
+      />
     </>
     </Suspense>
   );
