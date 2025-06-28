@@ -126,6 +126,8 @@ class LivestockAdmin(admin.ModelAdmin):
 
 @admin.register(UserLocalStorage)
 class UserLocalStorageAdmin(admin.ModelAdmin):
-    list_display = ('user', 'last_updated')
-    search_fields = ('user__username',)
+    list_display = ('id', 'user', 'last_updated')
+    search_fields = ('user__username', 'user__email')
+    list_filter = ('last_updated',)
+    list_select_related = ('user',)
     readonly_fields = ('last_updated',)

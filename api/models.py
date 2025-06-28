@@ -131,6 +131,9 @@ class EmissionSource(models.Model):
     class Meta:
         db_table = 'emission_sources'
 
+    def __str__(self):
+        return f"{self.source_type} - {self.co2_equivalent} CO2e"
+
 class SequestrationActivity(models.Model):
     id = models.AutoField(primary_key=True)
     farm = models.ForeignKey(Farm, on_delete=models.CASCADE, related_name='sequestration_activities')
@@ -143,6 +146,9 @@ class SequestrationActivity(models.Model):
 
     class Meta:
         db_table = 'sequestration_activities'
+
+    def __str__(self):
+        return f"{self.activity_type} - {self.co2_sequestered} CO2 sequestered"
 
 class EnergyRecord(models.Model):
     id = models.AutoField(primary_key=True)
@@ -158,6 +164,9 @@ class EnergyRecord(models.Model):
 
     class Meta:
         db_table = 'energy_records'
+
+    def __str__(self):
+        return f"{self.energy_type} - {self.amount} {self.unit}"
 
 class Livestock(models.Model):
     id = models.AutoField(primary_key=True)

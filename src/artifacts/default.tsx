@@ -60,7 +60,7 @@ import WeatherTaskPlanForm from './components/WeatherTaskPlanForm';
 import RotationPlanForm from './components/RotationPlanForm';
 import RainwaterPlanForm from './components/RainwaterPlanForm';
 import TrackerDashboard from './components/TrackerDashboard';
-import { DataStorage } from '@/services/DataStorage';
+import { DataStorage, ApiService } from '@/services/DataStorage';
 import DraggableWidgetLayout, { Widget } from './components/DraggableWidgetLayout'; // Correct Widget import
 import LoginPage from './components/LoginPage';
 import UserProfileSettings from '@/artifacts/components/UserProfileSettings';
@@ -606,10 +606,10 @@ const DefaultComponent = (): React.ReactNode => {
   const handleAddPlantingPlan = () => handleAddPlanItem('planting', newPlantingPlan);
   const handleAddFertilizerPlan = () => handleAddPlanItem('fertilizer', newFertilizerPlan);
   const handleAddPestPlan = () => handleAddPlanItem('pest', newPestPlan);
-  const handleAddIrrigationPlan = () => handleAddPlanItem('irrigation', newIrrigationPlan);
-  const handleAddWeatherTaskPlan = () => handleAddPlanItem('weatherTask', newWeatherTaskPlan);
-  const handleAddRotationPlan = () => handleAddPlanItem('rotation', newRotationPlan);
-  const handleAddRainwaterPlan = () => handleAddPlanItem('rainwater', newRainwaterPlan);
+  const handleAddIrrigationPlan = (e: React.FormEvent) => { e.preventDefault(); handleAddPlanItem('irrigation', newIrrigationPlan); };
+  const handleAddWeatherTaskPlan = (e: React.FormEvent) => { e.preventDefault(); handleAddPlanItem('weatherTask', newWeatherTaskPlan); };
+  const handleAddRotationPlan = (e: React.FormEvent) => { e.preventDefault(); handleAddPlanItem('rotation', newRotationPlan); };
+  const handleAddRainwaterPlan = (e: React.FormEvent) => { e.preventDefault(); handleAddPlanItem('rainwater', newRainwaterPlan); };
 
   // Update plan status function - required by PlannerDashboard
   const updatePlanStatus = (
@@ -642,89 +642,232 @@ const DefaultComponent = (): React.ReactNode => {
 
   // Update user auth state with proper typing
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return DataStorage.getData<boolean>('isLoggedIn', false);
+    return ApiService.isLoggedIn();
   });
   
   const [currentUser, setCurrentUser] = useState<UserData | null>(() => {
-    return DataStorage.getData<UserData | null>('currentUser', null);
+    return ApiService.getCurrentUser();
   });
   
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(() => {
+    return !ApiService.isLoggedIn();
+  });
   const [showProfileSettings, setShowProfileSettings] = useState(false);
 
-  // Handle user login
-  const handleLogin = (userData: { username: string; password: string }) => {
-    // In a real app, this would validate against a backend
-    // For this demo, just accept any login
-    const newUser: UserData = {
-      username: userData.username,
-      email: `${userData.username}@example.com`,
-      name: userData.username,
-      role: 'Farmer'
-    };
+  // Helper functions for user data management
+  const loadUserData = async () => {
+    try {
+      // Load user's localStorage data from backend
+      await ApiService.loadLocalStorageFromBackend();
+      
+      // Update state with loaded data
+      setFarms(DataStorage.getData<Farm[]>('farms', []));
+      setCropPlanEvents(DataStorage.getData<CropPlanEvent[]>('cropPlanEvents', []));
+      setPlantingPlans(DataStorage.getData<PlanItem[]>('plantingPlans', []));
+      setFertilizerPlans(DataStorage.getData<PlanItem[]>('fertilizerPlans', []));
+      setPestManagementPlans(DataStorage.getData<PlanItem[]>('pestManagementPlans', []));
+      setIrrigationPlans(DataStorage.getData<PlanItem[]>('irrigationPlans', []));
+      setWeatherTaskPlans(DataStorage.getData<PlanItem[]>('weatherTaskPlans', []));
+      setRotationPlans(DataStorage.getData<PlanItem[]>('rotationPlans', []));
+      setRainwaterPlans(DataStorage.getData<PlanItem[]>('rainwaterPlans', []));
+      setLivestockList(DataStorage.getData<ILivestock[]>('livestockList', []));
+      setFuelRecords(DataStorage.getData<FuelRecord[]>('fuelRecords', []));
+      setSoilRecords(DataStorage.getData<SoilRecord[]>('soilRecords', []));
+      setEmissionSources(DataStorage.getData<CarbonEmissionSource[]>('emissionSources', []));
+      setSequestrationActivities(DataStorage.getData<CarbonSequestrationActivity[]>('sequestrationActivities', []));
+      setEnergyRecords(DataStorage.getData<EnergyRecord[]>('energyRecords', []));
+      setWidgetLayout(DataStorage.getData<Widget[]>('widgetLayout', [
+        { i: 'quickActions', title: 'Quick Actions', isVisible: true, x: 0, y: 0, w: 3, h: 4, minH: 3, minW: 2 },
+        { i: 'sustainabilityScore', title: 'Sustainability Score', isVisible: true, x: 3, y: 0, w: 9, h: 4, minH: 3, minW: 6 },
+        { i: 'weatherPreview', title: 'Weather Preview', isVisible: true, x: 0, y: 4, w: 6, h: 3, minH: 3, minW: 3 },
+        { i: 'upcomingEvents', title: 'Upcoming Events', isVisible: true, x: 6, y: 4, w: 6, h: 3, minH: 3, minW: 3 },
+        { i: 'farmIssues', title: 'Farm Issues', isVisible: true, x: 0, y: 7, w: 6, h: 4, minH: 3, minW: 3 },
+        { i: 'taskManager', title: 'Task Manager', isVisible: true, x: 6, y: 7, w: 6, h: 4, minH: 3, minW: 3 },
+        { i: 'planningRecommendations', title: 'Planning Recommendations', isVisible: true, x: 0, y: 11, w: 12, h: 3, minH: 2, minW: 6 },
+        { i: 'livestockSummary', title: 'Livestock Summary', isVisible: true, x: 0, y: 14, w: 6, h: 4, minH: 3, minW: 3 }
+      ]));
+    } catch (error) {
+      console.error('Failed to load user data:', error);
+    }
+  };
+
+  const initializeNewUserData = async () => {
+    try {
+      // Save current empty state to backend
+      await ApiService.saveLocalStorageToBackend();
+    } catch (error) {
+      console.error('Failed to initialize user data:', error);
+    }
+  };
+
+  const clearLocalData = () => {
+    // Clear all app-related data from localStorage
+    const keysToKeep = ['authToken', 'currentUser']; // Keep auth-related keys for now
+    const keysToRemove = [];
     
-    DataStorage.setData('currentUser', newUser);
-    DataStorage.setData('isLoggedIn', true);
-    setCurrentUser(newUser);
-    setIsLoggedIn(true);
-    setShowLoginModal(false);
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && !keysToKeep.includes(key)) {
+        keysToRemove.push(key);
+      }
+    }
+    
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    
+    // Reset state to defaults
+    setFarms([]);
+    setCropPlanEvents([]);
+    setPlantingPlans([]);
+    setFertilizerPlans([]);
+    setPestManagementPlans([]);
+    setIrrigationPlans([]);
+    setWeatherTaskPlans([]);
+    setRotationPlans([]);
+    setRainwaterPlans([]);
+    setLivestockList([]);
+    setFuelRecords([]);
+    setSoilRecords([]);
+    setEmissionSources([]);
+    setSequestrationActivities([]);
+    setEnergyRecords([]);
+    setWidgetLayout([
+      { i: 'quickActions', title: 'Quick Actions', isVisible: true, x: 0, y: 0, w: 3, h: 4, minH: 3, minW: 2 },
+      { i: 'sustainabilityScore', title: 'Sustainability Score', isVisible: true, x: 3, y: 0, w: 9, h: 4, minH: 3, minW: 6 },
+      { i: 'weatherPreview', title: 'Weather Preview', isVisible: true, x: 0, y: 4, w: 6, h: 3, minH: 3, minW: 3 },
+      { i: 'upcomingEvents', title: 'Upcoming Events', isVisible: true, x: 6, y: 4, w: 6, h: 3, minH: 3, minW: 3 },
+      { i: 'farmIssues', title: 'Farm Issues', isVisible: true, x: 0, y: 7, w: 6, h: 4, minH: 3, minW: 3 },
+      { i: 'taskManager', title: 'Task Manager', isVisible: true, x: 6, y: 7, w: 6, h: 4, minH: 3, minW: 3 },
+      { i: 'planningRecommendations', title: 'Planning Recommendations', isVisible: true, x: 0, y: 11, w: 12, h: 3, minH: 2, minW: 6 },
+      { i: 'livestockSummary', title: 'Livestock Summary', isVisible: true, x: 0, y: 14, w: 6, h: 4, minH: 3, minW: 3 }
+    ]);
+  };
+
+  // Manual sync function for immediate synchronization
+  const syncDataToBackend = async () => {
+    if (isLoggedIn && ApiService.isLoggedIn()) {
+      try {
+        await ApiService.saveLocalStorageToBackend();
+        console.log('Manual sync completed successfully');
+        return true;
+      } catch (error) {
+        console.error('Manual sync failed:', error);
+        return false;
+      }
+    }
+    return false;
+  };
+
+  // Handle user login
+  const handleLogin = async (userData: { username: string; password: string }) => {
+    try {
+      const response = await ApiService.login(userData);
+      const newUser: UserData = {
+        username: response.username,
+        email: response.email,
+        name: response.name,
+        role: 'Farmer'
+      };
+      
+      setCurrentUser(newUser);
+      setIsLoggedIn(true);
+      setShowLoginModal(false);
+      
+      // Load user's data from backend
+      await loadUserData();
+    } catch (error: any) {
+      console.error('Login failed:', error);
+      // You can add error state handling here if needed
+      alert(error.message || 'Login failed. Please check your credentials.');
+    }
   };
 
   // Handle user registration
-  const handleRegister = (userData: { 
+  const handleRegister = async (userData: { 
     username: string; 
     password: string;
     email: string;
     name: string; 
   }) => {
-    // In a real app, this would send data to a backend
-    // For this demo, just create a new user
-    const newUser: UserData = {
-      username: userData.username,
-      email: userData.email,
-      name: userData.name,
-      role: 'Farmer'
-    };
-    
-    DataStorage.setData('currentUser', newUser);
-    DataStorage.setData('isLoggedIn', true);
-    setCurrentUser(newUser);
-    setIsLoggedIn(true);
-    setShowLoginModal(false);
+    try {
+      const response = await ApiService.register(userData);
+      const newUser: UserData = {
+        username: response.username,
+        email: response.email,
+        name: response.name,
+        role: 'Farmer'
+      };
+      
+      setCurrentUser(newUser);
+      setIsLoggedIn(true);
+      setShowLoginModal(false);
+      
+      // Initialize empty data for new user
+      await initializeNewUserData();
+    } catch (error: any) {
+      console.error('Registration failed:', error);
+      // You can add error state handling here if needed
+      alert(error.message || 'Registration failed. Please try again.');
+    }
   };
 
   // Handle user logout
-  const handleLogout = () => {
-    DataStorage.setData('isLoggedIn', false);
-    DataStorage.removeData('currentUser');
-    setIsLoggedIn(false);
-    setCurrentUser(null);
+  const handleLogout = async () => {
+    try {
+      await ApiService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setIsLoggedIn(false);
+      setCurrentUser(null);
+      // Clear local data
+      clearLocalData();
+    }
   };
 
   // Handle profile update
-  const handleProfileUpdate = (userData: {
+  const handleProfileUpdate = async (userData: {
     name: string;
     email: string;
     role: string;
   }) => {
     if (!currentUser) return;
     
-    const updatedUser = {
-      ...currentUser,
-      name: userData.name,
-      email: userData.email,
-      role: userData.role
-    };
-    
-    DataStorage.setData('currentUser', updatedUser);
-    setCurrentUser(updatedUser);
-    setShowProfileSettings(false);
+    try {
+      const response = await ApiService.updateProfile(userData);
+      const updatedUser = {
+        ...currentUser,
+        name: response.name,
+        email: response.email,
+        role: response.role || userData.role
+      };
+      
+      setCurrentUser(updatedUser);
+      setShowProfileSettings(false);
+    } catch (error: any) {
+      console.error('Profile update failed:', error);
+      alert(error.message || 'Failed to update profile. Please try again.');
+    }
   };
   
   const getFilteredFarms = () => {
     if (cropFilter === "all") return farms;
     return farms.filter(farm => farm.crop === cropFilter);
   };
+
+  // Check if user is already logged in on app load
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      if (ApiService.isLoggedIn()) {
+        const user = ApiService.getCurrentUser();
+        if (user) {
+          setCurrentUser(user);
+          setIsLoggedIn(true);
+          await loadUserData();
+        }
+      }
+    };
+    checkAuthStatus();
+  }, []);
 
   useEffect(() => {
     DataStorage.setData('farms', farms);
@@ -797,6 +940,42 @@ const DefaultComponent = (): React.ReactNode => {
     DataStorage.setData('livestockList', livestockList);
   }, [livestockList]);
 
+  // Auto-sync to backend when data changes and user is logged in
+  useEffect(() => {
+    const syncToBackend = async () => {
+      // Double-check authentication before syncing
+      if (isLoggedIn && ApiService.isLoggedIn() && ApiService.getCurrentUser()) {
+        try {
+          await ApiService.saveLocalStorageToBackend();
+          console.log('Data synced to backend successfully');
+        } catch (error) {
+          // If sync fails due to auth, update login state
+          if (error instanceof Error && (error.message.includes('401') || error.message.includes('Invalid token'))) {
+            console.log('Auth token invalid, logging out user');
+            setIsLoggedIn(false);
+            setCurrentUser(null);
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+          } else {
+            console.error('Failed to sync data to backend:', error);
+          }
+        }
+      }
+    };
+
+    // Only sync if user is actually logged in
+    if (isLoggedIn && ApiService.isLoggedIn()) {
+      // Reduced debounce to 300ms for more responsive sync
+      const timeoutId = setTimeout(syncToBackend, 300);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [
+    farms, cropPlanEvents, plantingPlans, fertilizerPlans, pestManagementPlans,
+    irrigationPlans, weatherTaskPlans, rotationPlans, rainwaterPlans,
+    fuelRecords, soilRecords, emissionSources, sequestrationActivities,
+    energyRecords, livestockList, widgetLayout, isLoggedIn
+  ]);
+
   const fetchUserLocation = async () => {
     try {
       // Using geojs.io instead of ipapi.co to avoid CORS issues
@@ -840,7 +1019,8 @@ const DefaultComponent = (): React.ReactNode => {
     }
   };
 
-  const handleAddFarm = () => {
+  const handleAddFarm = (e: React.FormEvent) => {
+    e.preventDefault();
     setFarms([...farms, {
       id: farms.length + 1,
       name: newFarm.name,
@@ -861,7 +1041,8 @@ const DefaultComponent = (): React.ReactNode => {
   };
 
   // Update handleEditFarm to include rotationHistory
-  const handleEditFarm = () => {
+  const handleEditFarm = (e: React.FormEvent) => {
+    e.preventDefault();
     if (editingFarm) {
       const updatedFarms = farms.map(farm => 
         farm.id === editingFarm.id ? { ...editingFarm, ...newFarm } : farm
