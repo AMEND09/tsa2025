@@ -2,17 +2,37 @@ import { Farm, WaterUsage, WeatherData, SustainabilityMetrics, MetricsAccumulato
 
 export const getPositionForElement = (selector: string, placement: 'top' | 'bottom' | 'left' | 'right' = 'bottom') => {
   const element = document.querySelector(selector);
-  if (!element) return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+  if (!element) {
+    // Fallback to center of screen if element not found
+    return { 
+      top: '50%', 
+      left: '50%', 
+      transform: 'translate(-50%, -50%)',
+      position: 'fixed' as const
+    };
+  }
 
   const rect = element.getBoundingClientRect();
   const isMobile = window.innerWidth < 768;
   const margin = isMobile ? 16 : 24;
+
+  // Ensure the element is actually visible
+  if (rect.width === 0 && rect.height === 0) {
+    // Element exists but has no dimensions, fallback to center
+    return { 
+      top: '50%', 
+      left: '50%', 
+      transform: 'translate(-50%, -50%)',
+      position: 'fixed' as const
+    };
+  }
 
   if (isMobile) {
     return {
       top: `${rect.bottom + margin}px`,
       left: '50%',
       transform: 'translateX(-50%)',
+      position: 'fixed' as const
     };
   }
 
@@ -46,6 +66,7 @@ export const getPositionForElement = (selector: string, placement: 'top' | 'bott
   return {
     ...position,
     left: `${left}px`,
+    position: 'fixed' as const
   };
 };
 

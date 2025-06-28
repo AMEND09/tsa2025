@@ -4,6 +4,7 @@ import { MessageCircle, Send, X, Minimize2, Maximize2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import ReactMarkdown from 'react-markdown';
 
 interface ChatMessage {
   id: string;
@@ -20,7 +21,23 @@ interface ChatBotProps {
 export const ChatBot: React.FC<ChatBotProps> = ({ farmData, apiKey }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    // Load messages from localStorage on initialization
+    try {
+      const savedMessages = localStorage.getItem('agrimind-chat-messages');
+      if (savedMessages) {
+        const parsed = JSON.parse(savedMessages);
+        // Convert timestamp strings back to Date objects
+        return parsed.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading chat messages from localStorage:', error);
+    }
+    return [];
+  });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [genAI, setGenAI] = useState<GoogleGenerativeAI | null>(null);
@@ -56,6 +73,15 @@ export const ChatBot: React.FC<ChatBotProps> = ({ farmData, apiKey }) => {
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Save messages to localStorage whenever messages change
+  useEffect(() => {
+    try {
+      localStorage.setItem('agrimind-chat-messages', JSON.stringify(messages));
+    } catch (error) {
+      console.error('Error saving chat messages to localStorage:', error);
+    }
   }, [messages]);
 
   const formatFarmDataForContext = () => {
@@ -106,12 +132,13 @@ export const ChatBot: React.FC<ChatBotProps> = ({ farmData, apiKey }) => {
     setError(null);
 
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       
       const farmContext = formatFarmDataForContext();
       
-      const prompt = `You are AgriMind AI, a smart farming assistant. You have access to the user's farm data below. 
-      Please analyze their question and provide helpful, actionable advice based on their specific farm situation.
+      const prompt = `You are AgriMind AI, a smart farming assistant focused on helping the user improve their farm's
+      sustainability. You have access to the user's farm data below. Please analyze their question and provide helpful,
+      actionable advice based on their specific farm situation.
       
       Farm Data Context:
       ${farmContext}
@@ -159,6 +186,12 @@ export const ChatBot: React.FC<ChatBotProps> = ({ farmData, apiKey }) => {
 
   const clearChat = () => {
     setMessages([]);
+    // Also clear from localStorage
+    try {
+      localStorage.removeItem('agrimind-chat-messages');
+    } catch (error) {
+      console.error('Error clearing chat messages from localStorage:', error);
+    }
   };
 
   const formatTime = (date: Date) => {
@@ -243,7 +276,37 @@ export const ChatBot: React.FC<ChatBotProps> = ({ farmData, apiKey }) => {
                         : 'bg-gray-100 text-gray-800 border'
                     }`}
                   >
-                    <div className="whitespace-pre-wrap">{message.content}</div>
+                    {message.role === 'assistant' ? (
+                      <div className="prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                        <ReactMarkdown 
+                          components={{
+                            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                            ul: ({ children }) => <ul className="list-disc list-inside mb-2 last:mb-0">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal list-inside mb-2 last:mb-0">{children}</ol>,
+                            li: ({ children }) => <li className="mb-1">{children}</li>,
+                            strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                            em: ({ children }) => <em className="italic">{children}</em>,
+                            code: ({ children }) => (
+                              <code className="bg-gray-200 px-1 py-0.5 rounded text-xs font-mono">
+                                {children}
+                              </code>
+                            ),
+                            pre: ({ children }) => (
+                              <pre className="bg-gray-200 p-2 rounded text-xs font-mono overflow-x-auto mb-2 last:mb-0">
+                                {children}
+                              </pre>
+                            ),
+                            h1: ({ children }) => <h1 className="text-lg font-bold mb-2">{children}</h1>,
+                            h2: ({ children }) => <h2 className="text-base font-bold mb-2">{children}</h2>,
+                            h3: ({ children }) => <h3 className="text-sm font-bold mb-1">{children}</h3>,
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <div className="whitespace-pre-wrap">{message.content}</div>
+                    )}
                     <div className={`text-xs mt-1 ${
                       message.role === 'user' ? 'text-green-100' : 'text-gray-500'
                     }`}>

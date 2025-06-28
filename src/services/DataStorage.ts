@@ -9,6 +9,14 @@ function getAuthToken(): string | null {
   return localStorage.getItem('authToken');
 }
 
+// Force logout and clear all cached data
+function forceLogout(): void {
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('currentUser');
+  // Clear all other cached data
+  localStorage.clear();
+}
+
 async function request<T>(endpoint: string, method: string = 'GET', body?: any): Promise<T> {
   const token = getAuthToken();
   const headers: HeadersInit = {
@@ -30,6 +38,16 @@ async function request<T>(endpoint: string, method: string = 'GET', body?: any):
   const response = await fetch(`${API_BASE_URL}/${endpoint}`, config);
 
   if (!response.ok) {
+    // Handle authentication errors - force logout if token is invalid
+    if (response.status === 401) {
+      console.warn('Authentication failed - token invalid or user deleted');
+      forceLogout();
+      // Optionally reload the page to force re-authentication
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
+    }
+    
     // Handle errors (e.g., by throwing an error or returning a specific error object)
     const errorData = await response.json().catch(() => ({ message: response.statusText }));
     console.error(`API Error (${response.status}) on ${method} ${endpoint}:`, errorData);
@@ -173,14 +191,17 @@ export class ApiService {
   }
 
   // Method to load localStorage data from the backend
-  static async loadLocalStorageFromBackend(): Promise<void> {
+  static async loadLocalStorageFromBackend(): Promise<boolean> {
     if (!ApiService.isLoggedIn()) {
-      return;
+      return false;
     }
     try {
       const backendData = await request<Record<string, string>>('sync/localstorage/load/', 'GET');
       
-      if (backendData) {
+      // Check if we received actual data or just an empty object
+      const hasData = backendData && Object.keys(backendData).length > 0;
+      
+      if (hasData) {
         // Store auth-related data before clearing
         const authToken = localStorage.getItem('authToken');
         const currentUser = localStorage.getItem('currentUser');
@@ -202,18 +223,78 @@ export class ApiService {
           }
         }
         console.log('LocalStorage loaded from backend.');
+        return true;
       } else {
-        console.log('No localStorage data received from backend.');
+        console.log('No localStorage data found in backend for user - will use defaults.');
+        return false;
       }
     } catch (error) {
       // Only log if it's not an auth error
       if (error instanceof Error && !error.message.includes('401') && !error.message.includes('Invalid token')) {
         console.error('Failed to load localStorage from backend:', error);
       }
+      return false;
     }
   }
 
-  // ... other methods for setData, removeData would now be addEntity, updateEntity, deleteEntity
+  // Validate current user against backend
+  static async validateCurrentUser(): Promise<boolean> {
+    try {
+      if (!ApiService.isLoggedIn()) {
+        return false;
+      }
+      
+      // Try to fetch user profile to validate the token and user still exists
+      const response = await request<any>('auth/profile/', 'GET');
+      const currentUser = ApiService.getCurrentUser();
+      
+      if (!currentUser || !response) {
+        console.warn('User validation failed: no current user or response');
+        return false;
+      }
+      
+      // Check if the user details match what we have cached
+      if (currentUser.username !== response.username || 
+          currentUser.email !== response.email ||
+          currentUser.id !== response.user_id) {
+        console.warn('User validation failed: cached user data does not match backend');
+        return false;
+      }
+      
+      // Update cached user with latest data from backend
+      localStorage.setItem('currentUser', JSON.stringify({
+        username: response.username,
+        email: response.email,
+        name: response.name,
+        id: response.user_id
+      }));
+      
+      return true;
+    } catch (error: any) {
+      console.error('User validation failed:', error.message);
+      
+      // If it's a 401 error, the forceLogout() will be called by the request function
+      // For other errors (network issues), we might not want to force logout immediately
+      if (error.message && error.message.includes('401')) {
+        return false;
+      }
+      
+      // For network errors, assume user is still valid but log the issue
+      if (error.message && (error.message.includes('fetch') || error.message.includes('network'))) {
+        console.warn('Network error during user validation, assuming user is still valid');
+        return true;
+      }
+      
+      return false;
+    }
+  }
+
+  // Force logout and clear all cached data
+  static forceLogout(): void {
+    forceLogout();
+  }
+
+  // ...existing code...
 }
 
 // The old DataStorage methods for walkthrough can remain if they are purely client-side

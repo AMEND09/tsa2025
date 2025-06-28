@@ -11,25 +11,37 @@ interface WalkthroughProps {
 
 const Walkthrough: React.FC<WalkthroughProps> = ({ onComplete, setActiveTab, WALKTHROUGH_STEPS }) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const [forceUpdate, setForceUpdate] = useState(0);
   const step = WALKTHROUGH_STEPS[currentStep];
 
   useEffect(() => {
     if (step) {
-      const target = document.querySelector(step.target);
-      if (target) {
-        const yOffset = -100; 
-        const y = target.getBoundingClientRect().top + window.pageYOffset + yOffset;
-        window.scrollTo({ top: y, behavior: 'smooth' });
-      }
-      step.onEnter?.();
+      // If we need to change tabs, do it first
       if (step.tabId) {
         setActiveTab(step.tabId);
       }
+      
+      // Wait for tab change and then scroll to target
+      const handleScrollToTarget = () => {
+        const target = document.querySelector(step.target);
+        if (target) {
+          const yOffset = -100; 
+          const y = target.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+        step.onEnter?.();
+        // Force a re-render to recalculate position
+        setForceUpdate(prev => prev + 1);
+      };
+      
+      // Delay to allow tab change to complete
+      const timeoutId = setTimeout(handleScrollToTarget, 200);
+      return () => clearTimeout(timeoutId);
     }
   }, [currentStep, step, setActiveTab]);
 
   if (!step) {
-    return null; // Or some fallback UI if a step is not found
+    return null;
   }
 
   return (
@@ -40,6 +52,7 @@ const Walkthrough: React.FC<WalkthroughProps> = ({ onComplete, setActiveTab, WAL
         style={{
           ...getPositionForElement(step.target, step.placement),
         }}
+        key={`walkthrough-${currentStep}-${forceUpdate}`} // Force re-render when position changes
       >
         <div className="flex justify-between items-start mb-2">
           <h3 className="text-lg font-bold">{step.title}</h3>

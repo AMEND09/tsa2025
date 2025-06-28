@@ -188,13 +188,6 @@ const DefaultComponent = (): React.ReactNode => {
       content: 'Plan your planting, fertilizing, and pest management activities here.',
       placement: 'right' as const,
       tabId: 'planners/calendar' // Default to calendar view in planners
-    },
-    {
-      target: '[data-walkthrough="livestock-tab"]',
-      title: 'Livestock Management',
-      content: 'Track and manage your farm livestock here.',
-      placement: 'right' as const,
-      tabId: 'livestock'
     }
   ];
 
@@ -232,17 +225,18 @@ const DefaultComponent = (): React.ReactNode => {
     return DataStorage.getData<CropPlanEvent[]>('cropPlanEvents', []);
   });
 
-  const [showWalkthrough, setShowWalkthrough] = useState(() => {
-    return !DataStorage.isWalkthroughCompleted();
-  });
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
 
-  const handleWalkthroughComplete = () => {
+  const handleWalkthroughComplete = async () => {
     setShowWalkthrough(false);
-    DataStorage.setData('walkthroughCompleted', true); // Corrected DataStorage call
+    await DataStorage.markWalkthroughCompleted();
   };
 
   const handleStartWalkthrough = () => {
-    setShowWalkthrough(true);
+    // Only start walkthrough if user is logged in and login modal is not open
+    if (isLoggedIn && !showLoginModal) {
+      setShowWalkthrough(true);
+    }
   };
 
   const [isAddingRotation, setIsAddingRotation] = useState(false);
@@ -652,10 +646,13 @@ const DefaultComponent = (): React.ReactNode => {
   // Helper functions for user data management
   const loadUserData = async () => {
     try {
+      console.log('Loading user data from backend...');
+      
       // Load user's localStorage data from backend
       await ApiService.loadLocalStorageFromBackend();
       
-      // Update state with loaded data
+      // Force update state with loaded data (even if it appears empty)
+      console.log('Updating state with loaded data...');
       setFarms(DataStorage.getData<Farm[]>('farms', []));
       setCropPlanEvents(DataStorage.getData<CropPlanEvent[]>('cropPlanEvents', []));
       setPlantingPlans(DataStorage.getData<PlanItem[]>('plantingPlans', []));
@@ -681,8 +678,12 @@ const DefaultComponent = (): React.ReactNode => {
         { i: 'planningRecommendations', title: 'Planning Recommendations', isVisible: true, x: 0, y: 11, w: 12, h: 3, minH: 2, minW: 6 },
         { i: 'livestockSummary', title: 'Livestock Summary', isVisible: true, x: 0, y: 14, w: 6, h: 4, minH: 3, minW: 3 }
       ]));
+      
+      console.log('User data loaded successfully from backend');
     } catch (error) {
       console.error('Failed to load user data:', error);
+      // If loading from backend fails, make sure we still have default empty arrays
+      // This prevents errors when the backend is unavailable
     }
   };
 
@@ -853,16 +854,43 @@ const DefaultComponent = (): React.ReactNode => {
   useEffect(() => {
     const checkAuthStatus = async () => {
       if (ApiService.isLoggedIn()) {
-        const user = ApiService.getCurrentUser();
-        if (user) {
-          setCurrentUser(user);
-          setIsLoggedIn(true);
-          await loadUserData();
+        // Validate the cached user against the backend
+        const isValidUser = await ApiService.validateCurrentUser();
+        
+        if (isValidUser) {
+          const user = ApiService.getCurrentUser();
+          if (user) {
+            setCurrentUser(user);
+            setIsLoggedIn(true);
+            setShowLoginModal(false);
+            await loadUserData();
+          }
+        } else {
+          // User is invalid (deleted/changed), force logout
+          console.log('Cached user is invalid, forcing logout');
+          ApiService.forceLogout();
+          setCurrentUser(null);
+          setIsLoggedIn(false);
+          setShowLoginModal(true);
         }
+      } else {
+        // No cached login, show login modal
+        setShowLoginModal(true);
       }
     };
     checkAuthStatus();
   }, []);
+
+  // Handle walkthrough state when login status changes
+  useEffect(() => {
+    if (isLoggedIn && !DataStorage.isWalkthroughCompleted() && !showLoginModal) {
+      // Only show walkthrough for logged-in users who haven't completed it and login modal is not open
+      setShowWalkthrough(true);
+    } else {
+      // Hide walkthrough when not logged in, already completed, or login modal is open
+      setShowWalkthrough(false);
+    }
+  }, [isLoggedIn, showLoginModal]);
 
   useEffect(() => {
     DataStorage.setData('farms', farms);
@@ -970,6 +998,58 @@ const DefaultComponent = (): React.ReactNode => {
     fuelRecords, soilRecords, emissionSources, sequestrationActivities,
     energyRecords, livestockList, widgetLayout, isLoggedIn
   ]);
+
+  // Periodically validate user session (every 5 minutes)
+  useEffect(() => {
+    let validationInterval: NodeJS.Timeout;
+    
+    if (isLoggedIn) {
+      validationInterval = setInterval(async () => {
+        try {
+          const isValidUser = await ApiService.validateCurrentUser();
+          if (!isValidUser) {
+            console.log('User session invalid during periodic check, forcing logout');
+            ApiService.forceLogout();
+            setCurrentUser(null);
+            setIsLoggedIn(false);
+            setShowLoginModal(true);
+          }
+        } catch (error) {
+          console.error('Periodic user validation failed:', error);
+          // On network errors, don't force logout immediately
+        }
+      }, 5 * 60 * 1000); // 5 minutes
+    }
+    
+    return () => {
+      if (validationInterval) {
+        clearInterval(validationInterval);
+      }
+    };
+  }, [isLoggedIn]);
+
+  // Validate user when the app regains focus
+  useEffect(() => {
+    const handleFocus = async () => {
+      if (isLoggedIn) {
+        try {
+          const isValidUser = await ApiService.validateCurrentUser();
+          if (!isValidUser) {
+            console.log('User session invalid on focus, forcing logout');
+            ApiService.forceLogout();
+            setCurrentUser(null);
+            setIsLoggedIn(false);
+            setShowLoginModal(true);
+          }
+        } catch (error) {
+          console.error('User validation on focus failed:', error);
+        }
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [isLoggedIn]);
 
   const fetchUserLocation = async () => {
     try {
@@ -1848,8 +1928,8 @@ const DefaultComponent = (): React.ReactNode => {
         />
       )}
       
-      {/* Using our imported Walkthrough component */}
-      {showWalkthrough && <Walkthrough 
+      {/* Using our imported Walkthrough component - only show when logged in and login modal is not open */}
+      {showWalkthrough && isLoggedIn && !showLoginModal && <Walkthrough 
         onComplete={handleWalkthroughComplete} 
         setActiveTab={setActiveTab} 
         WALKTHROUGH_STEPS={WALKTHROUGH_STEPS}
@@ -2962,29 +3042,32 @@ const DefaultComponent = (): React.ReactNode => {
         </DialogContent>
       </Dialog>
 
-      <ChatBot 
-        farmData={{
-          farms,
-          cropPlanEvents,
-          plantingPlans,
-          fertilizerPlans,
-          pestManagementPlans,
-          irrigationPlans,
-          weatherTaskPlans,
-          rotationPlans,
-          rainwaterPlans,
-          livestockList,
-          fuelRecords,
-          soilRecords,
-          emissionSources,
-          sequestrationActivities,
-          energyRecords,
-          sustainabilityMetrics,
-          issues,
-          tasks,
-          weatherData
-        }}
-      />
+      {/* Only show ChatBot when user is logged in and login modal is not open */}
+      {isLoggedIn && !showLoginModal && (
+        <ChatBot 
+          farmData={{
+            farms,
+            cropPlanEvents,
+            plantingPlans,
+            fertilizerPlans,
+            pestManagementPlans,
+            irrigationPlans,
+            weatherTaskPlans,
+            rotationPlans,
+            rainwaterPlans,
+            livestockList,
+            fuelRecords,
+            soilRecords,
+            emissionSources,
+            sequestrationActivities,
+            energyRecords,
+            sustainabilityMetrics,
+            issues,
+            tasks,
+            weatherData
+          }}
+        />
+      )}
     </>
     </Suspense>
   );
