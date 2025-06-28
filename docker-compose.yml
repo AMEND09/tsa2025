@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  agrimind:
+    build: .
+    ports:
+      - "80:80"
+    environment:
+      - DJANGO_SETTINGS_MODULE=backend.settings
+      - DEBUG=False
+    depends_on:
+      - db
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=agrimind
+      - POSTGRES_USER=agrimind
+      - POSTGRES_PASSWORD=your_password_here
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:6-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
