@@ -148,34 +148,89 @@ main() {
     print_status "=== AgriMind.ai Build and Deploy ==="
     
     # Check what deployment method to use
-    DEPLOY_METHOD=${1:-"github"}
+    DEPLOY_METHOD=${1:-""}
+    
+    if [ -z "$DEPLOY_METHOD" ]; then
+        echo "🔧 Choose deployment option:"
+        echo "1) Frontend only (GitHub Pages)"
+        echo "2) Frontend only (Netlify)"
+        echo "3) Frontend only (Vercel)"
+        echo "4) Full stack (Render)"
+        echo "5) Full stack (Railway)"
+        echo "6) Full stack (Heroku)"
+        echo "7) Build only (no deploy)"
+        echo "8) Quick build"
+        
+        read -p "Enter your choice (1-8): " choice
+        
+        case $choice in
+            1) DEPLOY_METHOD="github" ;;
+            2) DEPLOY_METHOD="netlify" ;;
+            3) DEPLOY_METHOD="vercel" ;;
+            4) DEPLOY_METHOD="render" ;;
+            5) DEPLOY_METHOD="railway" ;;
+            6) DEPLOY_METHOD="heroku" ;;
+            7) DEPLOY_METHOD="build" ;;
+            8) DEPLOY_METHOD="quick" ;;
+            *) 
+                print_error "Invalid choice. Exiting."
+                exit 1
+                ;;
+        esac
+    fi
     
     case $DEPLOY_METHOD in
         "github")
             print_status "Deploying to GitHub Pages..."
+            check_dependencies
+            install_frontend_deps
+            build_frontend
+            deploy_github_pages
             ;;
         "netlify")
             print_status "Deploying to Netlify..."
+            check_dependencies
+            install_frontend_deps
+            build_frontend
+            deploy_netlify
             ;;
         "vercel")
             print_status "Deploying to Vercel..."
+            check_dependencies
+            install_frontend_deps
+            build_frontend
+            deploy_vercel
             ;;
-        "build-only")
-            print_status "Building only, no deployment..."
+        "render"|"railway"|"heroku")
+            print_status "Preparing full stack deployment for $DEPLOY_METHOD..."
+            check_dependencies
+            install_frontend_deps
+            install_backend_deps
+            setup_backend
+            build_frontend
+            print_success "Build complete! Deploy manually through $DEPLOY_METHOD dashboard or configure auto-deploy."
+            ;;
+        "build")
+            print_status "Building everything..."
+            check_dependencies
+            install_frontend_deps
+            install_backend_deps
+            setup_backend
+            build_frontend
+            print_success "Build complete! Ready for manual deployment."
+            ;;
+        "quick")
+            print_status "Quick build (frontend only)..."
+            install_frontend_deps
+            build_frontend
+            print_success "Quick build complete!"
             ;;
         *)
             print_error "Unknown deployment method: $DEPLOY_METHOD"
-            echo "Usage: $0 [github|netlify|vercel|build-only]"
+            echo "Usage: $0 [github|netlify|vercel|render|railway|heroku|build|quick]"
             exit 1
             ;;
     esac
-    
-    # Run the build process
-    check_dependencies
-    install_frontend_deps
-    install_backend_deps
-    setup_backend
-    build_frontend
     
     # Deploy based on method
     case $DEPLOY_METHOD in
@@ -188,8 +243,10 @@ main() {
         "vercel")
             deploy_vercel
             ;;
-        "build-only")
-            print_success "Build completed. Files are in the 'dist' directory."
+        *)
+            print_error "Unknown deployment method: $DEPLOY_METHOD"
+            echo "Usage: $0 [github|netlify|vercel|render|railway|heroku|build|quick]"
+            exit 1
             ;;
     esac
     
