@@ -8,15 +8,15 @@ services:
   - type: web
     name: agrimind-app
     runtime: python
-    buildCommand: npm run deploy:fullstack:render
-    startCommand: gunicorn backend.wsgi:application
+    buildCommand: npm run render:build
+    startCommand: npm start
     envVars:
       - key: PYTHON_VERSION
-        value: "3.11.4"
+        value: "3.13.4"
       - key: DJANGO_SETTINGS_MODULE
         value: backend.settings
       - key: NODE_VERSION
-        value: "18"
+        value: "22.16.0"
       - key: DJANGO_SECRET_KEY
         generateValue: true
       - key: DJANGO_DEBUG
