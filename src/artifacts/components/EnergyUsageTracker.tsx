@@ -166,7 +166,7 @@ const EnergyUsageTracker: React.FC<EnergyUsageTrackerProps> = ({
 
     // Process fuel records - convert to energy equivalent
     fuelRecords.forEach(record => {
-      const type = record.fuelType.toLowerCase();
+      const type = record.fuelType?.toLowerCase() || 'unknown';
       if (!result[type]) {
         result[type] = {
           total: 0,
@@ -312,7 +312,7 @@ const EnergyUsageTracker: React.FC<EnergyUsageTrackerProps> = ({
         };
       }
 
-      const type = record.fuelType.toLowerCase();
+      const type = record.fuelType?.toLowerCase() || 'unknown';
       if (type === 'diesel') {
         monthlyData[month].diesel += record.gallons;
         monthlyData[month].nonRenewable += record.gallons * 40.7; // Convert to kWh

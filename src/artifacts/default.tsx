@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Bar } from 'recharts';
-import { Droplet, Leaf, LayoutDashboard, Info, Trash2, Edit3, RotateCw, Download, Upload, Settings, CloudRain, Pencil, X, UserCircle, LogIn, LogOut, BarChart3, Sprout, BugPlay, Cloud, Zap, Fuel, ChevronDown, ChevronRight, Calendar as CalendarIcon, PawPrint, HelpCircle, Spade, FlaskConical, Waves, Replace, Presentation, Sheet, Footprints } from 'lucide-react'; // Removed BadgeMinus
+import { Droplet, Leaf, LayoutDashboard, Info, Trash2, Edit3, RotateCw, Download, Upload, Settings, CloudRain, Pencil, X, UserCircle, LogIn, LogOut, BarChart3, Sprout, BugPlay, Cloud, Zap, Fuel, ChevronDown, ChevronRight, Calendar as CalendarIcon, PawPrint, HelpCircle, Spade, FlaskConical, Waves, Replace, Presentation, Sheet, Footprints, Menu } from 'lucide-react'; // Added Menu icon
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 import {
@@ -336,6 +336,9 @@ const DefaultComponent = (): React.ReactNode => {
     'group-trackers': false,
     'group-planners': true,
   });
+
+  // Add mobile menu state for responsive navigation
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleToggleExpand = (itemId: string) => {
     setExpandedItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
@@ -1857,7 +1860,7 @@ const DefaultComponent = (): React.ReactNode => {
             <Button
               variant="ghost"
               data-walkthrough={item.dataWalkthrough}
-              className={`w-full justify-start items-center pl-${level * 4 + 3} pr-3 py-2 text-left ${isActive ? 'bg-gray-200 font-semibold' : 'hover:bg-gray-100'}`}
+              className={`w-full justify-start items-center pl-${level * 4 + 3} pr-3 py-2 text-left transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${isActive ? 'bg-gray-200 font-semibold' : 'hover:bg-gray-100'}`}
               onClick={() => {
                 onToggle(item.id);
                 // If group itself is clickable (e.g. planners-tab walkthrough), navigate to first child
@@ -1871,12 +1874,15 @@ const DefaultComponent = (): React.ReactNode => {
                 }
               }}
             >
-              <item.icon className="h-4 w-4 mr-2 flex-shrink-0" />
-              <span className="flex-grow">{item.label}</span>
-              {expanded[item.id] ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              <item.icon className="h-4 w-4 mr-2 flex-shrink-0 transition-transform duration-200" />
+              <span className="flex-grow transition-all duration-200">{item.label}</span>
+              {expanded[item.id] ? 
+                <ChevronDown className="h-4 w-4 transition-transform duration-300 rotate-0" /> : 
+                <ChevronRight className="h-4 w-4 transition-transform duration-300 rotate-0" />
+              }
             </Button>
             {expanded[item.id] && (
-              <div className="pl-4 border-l border-gray-200 ml-5">
+              <div className="pl-4 border-l border-gray-200 ml-5 animate-in slide-in-from-top-2 duration-300">
                 {item.children.map(child => renderNavItem(child, level + 1))}
               </div>
             )}
@@ -1889,21 +1895,50 @@ const DefaultComponent = (): React.ReactNode => {
           key={item.id}
           variant="ghost"
           data-walkthrough={item.dataWalkthrough}
-          className={`w-full justify-start items-center pl-${level * 4 + 3} pr-3 py-2 text-left ${isActive ? 'bg-gray-200 font-semibold' : 'hover:bg-gray-100'}`}
-          onClick={() => onNavItemClick(item.id)}
+          className={`w-full justify-start items-center pl-${level * 4 + 3} pr-3 py-2 text-left transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${isActive ? 'bg-gray-200 font-semibold' : 'hover:bg-gray-100'}`}
+          onClick={() => {
+            onNavItemClick(item.id);
+            // Close mobile menu when item is clicked
+            setIsMobileMenuOpen(false);
+          }}
         >
-          <item.icon className="h-4 w-4 mr-2 flex-shrink-0" />
-          <span>{item.label}</span>
+          <item.icon className="h-4 w-4 mr-2 flex-shrink-0 transition-transform duration-200" />
+          <span className="transition-all duration-200">{item.label}</span>
         </Button>
       );
     };
 
     return (
-      <div className="w-64 bg-gray-50 border-r border-gray-200 h-full overflow-y-auto py-4">
-        <nav className="space-y-1">
-          {items.map(item => renderNavItem(item))}
-        </nav>
-      </div>
+      <>
+        {/* Mobile Menu Overlay with smooth fade animation */}
+        <div 
+          className={`
+            fixed inset-0 bg-black z-40 md:hidden
+            transition-opacity duration-300 ease-in-out
+            ${isMobileMenuOpen ? 'opacity-50' : 'opacity-0 pointer-events-none'}
+          `}
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+        
+        {/* Sidebar with enhanced smooth animation */}
+        <div className={`
+          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:translate-x-0 
+          fixed md:relative 
+          top-0 left-0 
+          w-64 bg-gray-50 border-r border-gray-200 h-full 
+          overflow-y-auto py-4 
+          transition-all duration-500 ease-out
+          transform-gpu
+          z-50 md:z-auto
+          shadow-xl md:shadow-none
+          ${isMobileMenuOpen ? 'backdrop-blur-sm' : ''}
+        `}>
+          <nav className="space-y-1">
+            {items.map(item => renderNavItem(item))}
+          </nav>
+        </div>
+      </>
     );
   };
 
@@ -1941,6 +1976,16 @@ const DefaultComponent = (): React.ReactNode => {
           <div className="mb-0"> {/* Reduced mb, header is fixed height */}
             <div className="flex justify-between items-center p-4 border-b bg-white">
               <div className="flex items-center gap-4">
+                {/* Mobile Menu Button with smooth animation */}
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className="md:hidden transition-all duration-200 hover:scale-105 active:scale-95"
+                  onClick={() => setIsMobileMenuOpen(true)}
+                >
+                  <Menu className="h-4 w-4 transition-transform duration-200" />
+                </Button>
+                
                 <img 
                   src="./logo.svg" 
                   alt="AgriMind AI" 
@@ -1953,8 +1998,8 @@ const DefaultComponent = (): React.ReactNode => {
                   }} 
                 />
                 <div>
-                  <h1 className="text-3xl font-bold">AgriMind AI</h1>
-                  <p className="text-gray-500">Manage your farm operations sustainably</p>
+                  <h1 className="text-2xl md:text-3xl font-bold">AgriMind AI</h1>
+                  <p className="text-gray-500 text-sm md:text-base">Manage your farm operations sustainably</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -2001,7 +2046,7 @@ const DefaultComponent = (): React.ReactNode => {
             </div>
           </div>
 
-          <div className="flex flex-1 overflow-hidden"> {/* Main content area */}
+          <div className="flex flex-1 overflow-hidden relative"> {/* Main content area */}
             <Sidebar 
               items={navItems} 
               currentActiveTab={activeTab} 
@@ -2010,7 +2055,7 @@ const DefaultComponent = (): React.ReactNode => {
               onToggle={handleToggleExpand}
             />
             
-            <main className="flex-1 p-6 overflow-y-auto bg-white"> {/* Content area */}
+            <main className="flex-1 p-4 md:p-6 overflow-y-auto bg-white"> {/* Content area with responsive padding */}
               <Tabs value={mainTabForTabsComponent} className="space-y-4 h-full">
                 {/* No TabsList here, navigation is via Sidebar */}
 

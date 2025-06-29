@@ -52,9 +52,9 @@ const WaterManagement: React.FC<WaterManagementProps> = ({
   ).sort((a, b) => a.timestamp - b.timestamp);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Water Management Dashboard</h2>
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
+        <h2 className="text-xl md:text-2xl font-bold">Water Management Dashboard</h2>
         <div className="text-sm text-gray-500">
           Manage water usage, irrigation plans, and efficiency
         </div>
@@ -68,7 +68,7 @@ const WaterManagement: React.FC<WaterManagementProps> = ({
       />
 
       {/* Water Usage Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -149,7 +149,7 @@ const WaterManagement: React.FC<WaterManagementProps> = ({
       </Card>
 
       {/* Water Efficiency and Management Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Water Efficiency Analysis */}
         <Card>
           <CardHeader>
@@ -232,7 +232,7 @@ const WaterManagement: React.FC<WaterManagementProps> = ({
           <CardTitle>Irrigation Planning Overview</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {getFilteredFarms().map(farm => (
               <div key={farm.id} className="p-4 border rounded-lg">
                 <h3 className="font-semibold mb-2">{farm.name}</h3>

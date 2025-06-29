@@ -200,13 +200,17 @@ const CarbonFootprintTracker: React.FC<CarbonFootprintTrackerProps> = ({
     filteredEmissions.forEach(source => {
       const date = new Date(source.date);
       const month = date.getMonth();
-      data[month].emissions += source.co2Equivalent;
+      if (data[month]) { // Safety check
+        data[month].emissions += source.co2Equivalent;
+      }
     });
     
     filteredSequestrations.forEach(activity => {
       const date = new Date(activity.date);
       const month = date.getMonth();
-      data[month].sequestration += activity.co2Sequestered;
+      if (data[month]) { // Safety check
+        data[month].sequestration += activity.co2Sequestered;
+      }
     });
     
     return data;
