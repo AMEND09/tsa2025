@@ -702,12 +702,12 @@ const DefaultComponent = (): React.ReactNode => {
 
   const clearLocalData = () => {
     // Clear all app-related data from localStorage
-    const keysToKeep = ['authToken', 'currentUser']; // Keep auth-related keys for now
+    const keysToKeep = ['authToken']; // Keep auth-related keys for now
     const keysToRemove = [];
     
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && !keysToKeep.includes(key)) {
+      if (key && !keysToKeep.includes(key) && !key.startsWith('user_')) {
         keysToRemove.push(key);
       }
     }
@@ -982,7 +982,7 @@ const DefaultComponent = (): React.ReactNode => {
             setIsLoggedIn(false);
             setCurrentUser(null);
             localStorage.removeItem('authToken');
-            localStorage.removeItem('currentUser');
+            DataStorage.clearUserData();
           } else {
             console.error('Failed to sync data to backend:', error);
           }

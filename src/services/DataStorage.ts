@@ -12,7 +12,7 @@ function getAuthToken(): string | null {
 // Force logout and clear all cached data
 function forceLogout(): void {
   localStorage.removeItem('authToken');
-  localStorage.removeItem('currentUser');
+  DataStorage.clearUserData();
   // Clear all other cached data
   localStorage.clear();
 }
@@ -66,12 +66,12 @@ export class ApiService {
     const data = await request<any>('auth/login/', 'POST', credentials);
     if (data.token) {
       localStorage.setItem('authToken', data.token);
-      localStorage.setItem('currentUser', JSON.stringify({
+      DataStorage.setUserData({
         username: data.username,
         email: data.email,
         name: data.name,
         id: data.user_id
-      }));
+      });
       await ApiService.saveLocalStorageToBackend();
     }
     return data;
@@ -87,12 +87,12 @@ export class ApiService {
     const data = await request<any>('auth/register/', 'POST', userData);
     if (data.token) {
       localStorage.setItem('authToken', data.token);
-      localStorage.setItem('currentUser', JSON.stringify({
+      DataStorage.setUserData({
         username: data.username,
         email: data.email,
         name: data.name,
         id: data.user_id
-      }));
+      });
       await ApiService.saveLocalStorageToBackend();
     }
     return data;
@@ -105,7 +105,7 @@ export class ApiService {
       console.error('Logout error:', error);
     } finally {
       localStorage.removeItem('authToken');
-      localStorage.removeItem('currentUser');
+      DataStorage.clearUserData();
       // Don't sync to backend after logout as user is no longer authenticated
     }
   }
@@ -119,16 +119,17 @@ export class ApiService {
     // Update local storage with new data
     const currentUser = ApiService.getCurrentUser();
     if (currentUser) {
-      const updatedUser = { ...currentUser, ...userData };
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      DataStorage.updateUserData({
+        name: userData.name,
+        email: userData.email
+      });
       await ApiService.saveLocalStorageToBackend();
     }
     return data;
   }
   
   static getCurrentUser(): any | null {
-    const user = localStorage.getItem('currentUser');
-    return user ? JSON.parse(user) : null;
+    return DataStorage.getUserData();
   }
 
   static isLoggedIn(): boolean {
@@ -175,7 +176,8 @@ export class ApiService {
     const localStorageSnapshot: Record<string, string | null> = {};
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key !== 'authToken' && key !== 'currentUser') { // Don't sync auth-related data
+      if (key && key !== 'authToken' && 
+          !key.startsWith('user_')) { // Don't sync auth-related data or individual user data keys
         localStorageSnapshot[key] = localStorage.getItem(key);
       }
     }
@@ -202,23 +204,23 @@ export class ApiService {
       const hasData = backendData && Object.keys(backendData).length > 0;
       
       if (hasData) {
-        // Store auth-related data before clearing
+        // Store auth-related data and user data before clearing
         const authToken = localStorage.getItem('authToken');
-        const currentUser = localStorage.getItem('currentUser');
+        const userData = DataStorage.getUserData();
         localStorage.clear();
         
         // Restore auth-related data
         if (authToken) {
           localStorage.setItem('authToken', authToken);
         }
-        if (currentUser) {
-          localStorage.setItem('currentUser', currentUser);
+        if (userData) {
+          DataStorage.setUserData(userData);
         }
         
         // Load data from backend
         for (const key in backendData) {
           if (Object.prototype.hasOwnProperty.call(backendData, key) && 
-              key !== 'authToken' && key !== 'currentUser') {
+              key !== 'authToken' && !key.startsWith('user_')) {
             localStorage.setItem(key, backendData[key]);
           }
         }
@@ -262,12 +264,12 @@ export class ApiService {
       }
       
       // Update cached user with latest data from backend
-      localStorage.setItem('currentUser', JSON.stringify({
+      DataStorage.setUserData({
         username: response.username,
         email: response.email,
         name: response.name,
         id: response.user_id
-      }));
+      });
       
       return true;
     } catch (error: any) {
@@ -301,6 +303,120 @@ export class ApiService {
 export class DataStorage {
   private static syncTimer: NodeJS.Timeout | null = null;
   private static pendingSync = false;
+
+  // User data keys for individual storage
+  private static readonly USER_DATA_KEYS = {
+    USERNAME: 'user_username',
+    EMAIL: 'user_email', 
+    NAME: 'user_name',
+    ID: 'user_id'
+  } as const;
+
+  // Utility functions for managing individual user data keys
+  static setUserData(userData: {
+    username: string;
+    email: string;
+    name: string;
+    id: number | string;
+  }): void {
+    try {
+      localStorage.setItem(this.USER_DATA_KEYS.USERNAME, userData.username);
+      localStorage.setItem(this.USER_DATA_KEYS.EMAIL, userData.email);
+      localStorage.setItem(this.USER_DATA_KEYS.NAME, userData.name);
+      localStorage.setItem(this.USER_DATA_KEYS.ID, userData.id.toString());
+      this.scheduleBatchSync();
+    } catch (error) {
+      console.error('Error storing user data:', error);
+    }
+  }
+
+  static getUserData(): any | null {
+    try {
+      // Check if we need to migrate from old format
+      this.migrateFromOldFormat();
+
+      const username = localStorage.getItem(this.USER_DATA_KEYS.USERNAME);
+      const email = localStorage.getItem(this.USER_DATA_KEYS.EMAIL);
+      const name = localStorage.getItem(this.USER_DATA_KEYS.NAME);
+      const id = localStorage.getItem(this.USER_DATA_KEYS.ID);
+
+      if (!username || !email || !name || !id) {
+        return null;
+      }
+
+      return {
+        username,
+        email,
+        name,
+        id: parseInt(id, 10)
+      };
+    } catch (error) {
+      console.error('Error retrieving user data:', error);
+      return null;
+    }
+  }
+
+  // Migration function to handle existing users with old format
+  private static migrateFromOldFormat(): void {
+    try {
+      const oldCurrentUser = localStorage.getItem('currentUser');
+      if (oldCurrentUser && !localStorage.getItem(this.USER_DATA_KEYS.USERNAME)) {
+        // Migration needed - we have old data but no new data
+        const userData = JSON.parse(oldCurrentUser);
+        if (userData && userData.username) {
+          console.log('Migrating user data from old format to new format');
+          this.setUserData({
+            username: userData.username,
+            email: userData.email || '',
+            name: userData.name || '',
+            id: userData.id || userData.user_id || 0
+          });
+          // Remove the old format data
+          localStorage.removeItem('currentUser');
+        }
+      }
+    } catch (error) {
+      console.warn('Error during user data migration:', error);
+      // If migration fails, just continue with existing data
+    }
+  }
+
+  static updateUserData(updates: Partial<{
+    username: string;
+    email: string;
+    name: string;
+    id: number | string;
+  }>): void {
+    try {
+      if (updates.username !== undefined) {
+        localStorage.setItem(this.USER_DATA_KEYS.USERNAME, updates.username);
+      }
+      if (updates.email !== undefined) {
+        localStorage.setItem(this.USER_DATA_KEYS.EMAIL, updates.email);
+      }
+      if (updates.name !== undefined) {
+        localStorage.setItem(this.USER_DATA_KEYS.NAME, updates.name);
+      }
+      if (updates.id !== undefined) {
+        localStorage.setItem(this.USER_DATA_KEYS.ID, updates.id.toString());
+      }
+      this.scheduleBatchSync();
+    } catch (error) {
+      console.error('Error updating user data:', error);
+    }
+  }
+
+  static clearUserData(): void {
+    try {
+      localStorage.removeItem(this.USER_DATA_KEYS.USERNAME);
+      localStorage.removeItem(this.USER_DATA_KEYS.EMAIL);
+      localStorage.removeItem(this.USER_DATA_KEYS.NAME);
+      localStorage.removeItem(this.USER_DATA_KEYS.ID);
+      this.scheduleBatchSync();
+    } catch (error) {
+      console.error('Error clearing user data:', error);
+    }
+  }
 
   static isWalkthroughCompleted(): boolean {
     return !!localStorage.getItem('walkthroughCompleted');
