@@ -3,7 +3,7 @@ from rest_framework import serializers
 from .models import (
     Farm, WaterHistory, FertilizerHistory, HarvestHistory, Task, Issue,
     CropPlanEvent, PlanItem, FuelRecord, SoilRecord, EmissionSource,
-    SequestrationActivity, EnergyRecord, Livestock, UserLocalStorage
+    SequestrationActivity, EnergyRecord, Livestock, UserData
 )
 
 class WaterHistorySerializer(serializers.ModelSerializer):
@@ -106,10 +106,13 @@ class LivestockSerializer(serializers.ModelSerializer):
         model = Livestock
         fields = ['id', 'farm_id', 'type', 'count']
 
+class UserDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserData
+        fields = ['key', 'value']
+
 class ExportDataSerializer(serializers.Serializer):
-    version = serializers.CharField(max_length=10)
-    export_date = serializers.CharField(source='exportDate')
-    farms = FarmSerializer(many=True)
+    farms = FarmSerializer(many=True, read_only=True)
     tasks = TaskSerializer(many=True)
     issues = IssueSerializer(many=True)
     crop_plan_events = CropPlanEventSerializer(many=True, source='cropPlanEvents')
@@ -126,9 +129,3 @@ class ExportDataSerializer(serializers.Serializer):
     sequestration_activities = SequestrationActivitySerializer(many=True)
     energy_records = EnergyRecordSerializer(many=True)
     livestock = LivestockSerializer(many=True)
-
-class UserLocalStorageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserLocalStorage
-        fields = ['user', 'data', 'last_updated']
-        read_only_fields = ['user', 'last_updated']

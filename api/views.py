@@ -13,14 +13,15 @@ from datetime import datetime
 from .models import (
     Farm, WaterHistory, FertilizerHistory, HarvestHistory, Task, Issue,
     CropPlanEvent, PlanItem, FuelRecord, SoilRecord, EmissionSource,
-    SequestrationActivity, EnergyRecord, Livestock, UserLocalStorage # Added UserLocalStorage
+    SequestrationActivity, EnergyRecord, Livestock, UserData
 )
 from .serializers import (
-    ExportDataSerializer, UserLocalStorageSerializer # Added UserLocalStorageSerializer
-    # Make sure all other serializers like FarmSerializer, TaskSerializer are imported if used directly in this file
+    FarmSerializer, TaskSerializer, IssueSerializer, CropPlanEventSerializer,
+    PlanItemSerializer, FuelRecordSerializer, SoilRecordSerializer,
+    EmissionSourceSerializer, SequestrationActivitySerializer, EnergyRecordSerializer,
+    LivestockSerializer, ExportDataSerializer, UserDataSerializer
 )
-# Import other necessary serializers if they are not already imported
-# from .serializers import FarmSerializer, TaskSerializer, IssueSerializer, CropPlanEventSerializer, PlanItemSerializer, FuelRecordSerializer, SoilRecordSerializer, EmissionSourceSerializer, SequestrationActivitySerializer, EnergyRecordSerializer, LivestockSerializer
+from django.contrib.auth import get_user_model
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -279,14 +280,15 @@ class SaveLocalStorageView(APIView):
             return Response({'error': 'Invalid data format. Expected a JSON object.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            local_storage_instance, created = UserLocalStorage.objects.update_or_create(
-                user=user,
-                defaults={'data': data_payload}
-            )
-            # We don't need to return the full data back, just a success message.
-            # Frontend already has the data.
-            status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
-            return Response({'message': 'LocalStorage snapshot saved successfully.'}, status=status_code)
+            # Batch update/create key-value pairs
+            for key, value in data_payload.items():
+                UserData.objects.update_or_create(
+                    user=user,
+                    key=key,
+                    defaults={'value': value}
+                )
+            
+            return Response({'message': 'LocalStorage snapshot saved successfully.'}, status=status.HTTP_200_OK)
         except Exception as e:
             # Log the exception e for debugging
             return Response({'error': 'Could not save localStorage data.', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -297,11 +299,12 @@ class LoadLocalStorageView(APIView):
     def get(self, request, *args, **kwargs):
         user = request.user
         try:
-            local_storage_instance = UserLocalStorage.objects.get(user=user)
-            return Response(local_storage_instance.data, status=status.HTTP_200_OK)
-        except UserLocalStorage.DoesNotExist:
-            # Frontend expects an object, even if empty, to populate localStorage
-            return Response({}, status=status.HTTP_200_OK) 
+            user_data_queryset = UserData.objects.filter(user=user)
+            
+            # Serialize the data into a dictionary
+            data_map = {item.key: item.value for item in user_data_queryset}
+            
+            return Response(data_map, status=status.HTTP_200_OK)
         except Exception as e:
             # Log the exception e for debugging
             return Response({'error': 'Could not load localStorage data.', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

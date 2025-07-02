@@ -180,14 +180,16 @@ class Livestock(models.Model):
     def __str__(self):
         return f"{self.type} ({self.count})"
 
-class UserLocalStorage(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='local_storage_data') # Changed related_name to avoid potential clash
-    data = models.JSONField()
+class UserData(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_data')
+    key = models.CharField(max_length=255, db_index=True)
+    value = models.JSONField()
     last_updated = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"LocalStorage for {self.user.username}"
-
     class Meta:
-        db_table = 'user_local_storage'
-        verbose_name_plural = "User Local Storage Data"
+        unique_together = ('user', 'key')
+        db_table = 'user_data'
+        verbose_name_plural = "User Data"
+
+    def __str__(self):
+        return f"Data for {self.user.username}: {self.key}"
