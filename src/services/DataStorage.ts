@@ -73,7 +73,7 @@ export class ApiService {
         id: data.user_id
       });
       // await ApiService.saveLocalStorageToBackend(); // Let's load first, then save.
-      await ApiService.loadUserDataFromBackend();
+      await ApiService.loadLocalStorageFromBackend();
     }
     return data;
   }
@@ -94,7 +94,7 @@ export class ApiService {
         name: data.name,
         id: data.user_id
       });
-      await ApiService.saveUserDataToBackend();
+      await ApiService.saveLocalStorageToBackend();
     }
     return data;
   }
@@ -124,7 +124,7 @@ export class ApiService {
         name: userData.name,
         email: userData.email
       });
-      await ApiService.saveUserDataToBackend();
+      await ApiService.saveLocalStorageToBackend();
     }
     return data;
   }
@@ -169,7 +169,7 @@ export class ApiService {
   }
   
   // Method to save the entire localStorage to the backend
-  static async saveUserDataToBackend(): Promise<void> {
+  static async saveLocalStorageToBackend(): Promise<void> {
     if (!ApiService.isLoggedIn()) {
       // Don't log this as it creates noise - just silently skip
       return;
@@ -184,17 +184,17 @@ export class ApiService {
     }
     try {
       await request<void>('sync/localstorage/save/', 'POST', localStorageSnapshot);
-      console.log('User data snapshot saved to backend.');
+      console.log('LocalStorage snapshot saved to backend.');
     } catch (error) {
       // Only log if it's not an auth error
       if (error instanceof Error && !error.message.includes('401') && !error.message.includes('Invalid token')) {
-        console.error('Failed to save user data snapshot to backend. Data is still saved locally.', error);
+        console.error('Failed to save localStorage snapshot to backend. Data is still saved locally.', error);
       }
     }
   }
 
   // Method to load localStorage data from the backend
-  static async loadUserDataFromBackend(): Promise<boolean> {
+  static async loadLocalStorageFromBackend(): Promise<boolean> {
     if (!ApiService.isLoggedIn()) {
       return false;
     }
@@ -225,16 +225,16 @@ export class ApiService {
             localStorage.setItem(key, backendData[key]);
           }
         }
-        console.log('User data loaded from backend.');
+        console.log('LocalStorage loaded from backend.');
         return true;
       } else {
-        console.log('No user data found in backend for user - will use defaults.');
+        console.log('No localStorage data found in backend for user - will use defaults.');
         return false;
       }
     } catch (error) {
       // Only log if it's not an auth error
       if (error instanceof Error && !error.message.includes('401') && !error.message.includes('Invalid token')) {
-        console.error('Failed to load user data from backend:', error);
+        console.error('Failed to load localStorage from backend:', error);
       }
       return false;
     }
@@ -467,7 +467,8 @@ export class DataStorage {
       if (!this.pendingSync && ApiService.isLoggedIn()) {
         this.pendingSync = true;
         try {
-          await ApiService.saveUserDataToBackend();
+          await ApiService.saveLocalStorageToBackend();
+          console.log('Batch sync completed successfully');
         } catch (error) {
           console.error('Batch sync failed:', error);
         } finally {
@@ -478,7 +479,7 @@ export class DataStorage {
   }
 
   // Force immediate sync
-  static async forceSync(): Promise<boolean> {
+  static async forcSync(): Promise<boolean> {
     if (this.syncTimer) {
       clearTimeout(this.syncTimer);
       this.syncTimer = null;
@@ -487,7 +488,7 @@ export class DataStorage {
     if (!this.pendingSync && ApiService.isLoggedIn()) {
       this.pendingSync = true;
       try {
-        await ApiService.saveUserDataToBackend();
+        await ApiService.saveLocalStorageToBackend();
         console.log('Force sync completed successfully');
         return true;
       } catch (error) {

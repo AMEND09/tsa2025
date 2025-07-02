@@ -16,12 +16,11 @@ from .models import (
     SequestrationActivity, EnergyRecord, Livestock, UserData
 )
 from .serializers import (
-    FarmSerializer, TaskSerializer, IssueSerializer, CropPlanEventSerializer,
-    PlanItemSerializer, FuelRecordSerializer, SoilRecordSerializer,
-    EmissionSourceSerializer, SequestrationActivitySerializer, EnergyRecordSerializer,
-    LivestockSerializer, ExportDataSerializer, UserDataSerializer
+    ExportDataSerializer, UserDataSerializer
+    # Make sure all other serializers like FarmSerializer, TaskSerializer are imported if used directly in this file
 )
-from django.contrib.auth import get_user_model
+# Import other necessary serializers if they are not already imported
+# from .serializers import FarmSerializer, TaskSerializer, IssueSerializer, CropPlanEventSerializer, PlanItemSerializer, FuelRecordSerializer, SoilRecordSerializer, EmissionSourceSerializer, SequestrationActivitySerializer, EnergyRecordSerializer, LivestockSerializer
 
 
 @method_decorator(csrf_exempt, name='dispatch')

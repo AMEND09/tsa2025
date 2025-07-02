@@ -112,7 +112,9 @@ class UserDataSerializer(serializers.ModelSerializer):
         fields = ['key', 'value']
 
 class ExportDataSerializer(serializers.Serializer):
-    farms = FarmSerializer(many=True, read_only=True)
+    version = serializers.CharField(max_length=10)
+    export_date = serializers.CharField(source='exportDate')
+    farms = FarmSerializer(many=True)
     tasks = TaskSerializer(many=True)
     issues = IssueSerializer(many=True)
     crop_plan_events = CropPlanEventSerializer(many=True, source='cropPlanEvents')
@@ -129,3 +131,5 @@ class ExportDataSerializer(serializers.Serializer):
     sequestration_activities = SequestrationActivitySerializer(many=True)
     energy_records = EnergyRecordSerializer(many=True)
     livestock = LivestockSerializer(many=True)
+
+# UserLocalStorageSerializer removed - replaced with UserDataSerializer
